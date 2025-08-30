@@ -2,6 +2,9 @@
 
 Equibop is a fork of [Vesktop](https://github.com/Vencord/Vesktop).
 
+> [!NOTE]  
+> If you're looking for ported version of Vencord's Vesktop, please look [here](https://github.com/gastonebellini4692/Vesktop-Legacy).
+
 Ported for Windows NT 6.x and macOS Catalina.
 
 ## Main features
