@@ -1,24 +1,18 @@
 # Equibop [<img src="/static/icon.png" width="225" align="right" alt="Equibop">](https://github.com/Equicord/Equibop)
 
-[![Equicord](https://img.shields.io/badge/Equicord-grey?style=flat)](https://github.com/Equicord/Equicord)
-[![Tests](https://github.com/Equicord/Equibop/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Equicord/Equibop/actions/workflows/test.yml)
-[![Discord](https://img.shields.io/discord/1173279886065029291.svg?color=768AD4&label=Discord&logo=discord&logoColor=white)](https://equicord.org/discord)
-
 Equibop is a fork of [Vesktop](https://github.com/Vencord/Vesktop).
 
-<<<<<<< HEAD
-You can join our [discord server](https://equicord.org/discord) for commits, changes, chat or even support.<br></br>
-=======
 > [!NOTE]  
 > If you're looking for ported version of Vencord's Vesktop, please look [here](https://github.com/TK50P/Vesktop-Legacy).
 
 Ported for Windows NT 6.x and macOS Catalina.
->>>>>>> 5a69ce3 (Update README.md)
 
 ## Main features
 
 - Much more lightweight and faster than the official Discord app
-- Linux Screenshare with sound & wayland
+- Windows NT 6.x (Vista _with [Extended kernel](https://win32subsystem.live/extended-kernel/download/)_, 7, 8, 8.1) Support
+- Windows 32-bit support
+- macOS Catalina 10.15 Support
 
 **Extra included changes**
 
@@ -30,9 +24,9 @@ Ported for Windows NT 6.x and macOS Catalina.
 - Remove (#) title prefix when Notification Badge option is toggled from [this PR](https://github.com/Vencord/Vesktop/pull/686)
 - Allow patching video & audio devices into screen share from [this PR](https://github.com/Vencord/Vesktop/pull/195)
 
-**Linux Note**:
-
-- You can use the `--toggle-mic` & `--toggle-deafen` flags to toggle your microphone and deafen status from the terminal.
+<img width="1920" height="1080" alt="Screenshot 2025-08-30 150942" src="https://github.com/user-attachments/assets/f5813e00-9158-4ce1-9a42-1e5557c2530e" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/bdf579d9-a548-41f4-877b-f5828be39af2" />
+<img width="1920" height="1080" alt="Screen Shot 2025-08-31 at 7 40 52 AM" src="https://github.com/user-attachments/assets/537334e9-376a-4eaa-8224-afb62112175f" />
 
 **Not fully Supported**:
 <!-- not supported on windows yet lol -->
@@ -45,47 +39,15 @@ Ported for Windows NT 6.x and macOS Catalina.
 If you don't know the difference, pick the Installer.
 
 - Installer
-  - [Universal](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-win.exe)
-  - [x64 / amd64](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-win-x64.exe)
-  - [Arm® 64](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-win-arm64.exe)
-- Portable
-  - [x64 / amd64](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-win-x64.zip)
-  - [Arm® 64](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-win-arm64.zip)
+  - [Windows NT 6.x 32-Bit](https://github.com/TK50P/Equibop-Legacy/releases/download/v2.1.6/Equibop-win7-ia32.exe)
+  - [Windows NT 6.x 64-Bit](https://github.com/TK50P/Equibop-Legacy/releases/download/v2.1.6/Equibop-win7-ia32.exe)
+  - [Windows 10 32-Bit](https://github.com/TK50P/Equibop-Legacy/releases/download/v2.1.6/Equibop-win-ia32.exe)
 
 ### Mac
 
-These work on both M Series and Intel Series Macs
+These work on macOS Catalina 10.15
 
-- [DMG](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-mac-universal.dmg)
-- [ZIP](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-mac-universal.zip)
-
-### Linux
-
-[![Equibop](https://img.shields.io/badge/AVAILABLE_ON_THE_AUR-333232?style=for-the-badge&logo=arch-linux&logoColor=0F94D2&labelColor=%23171717)](https://aur.archlinux.org/packages?O=0&K=equibop)
-<br>
-<a href="https://flathub.org/apps/io.github.equicord.equibop">
-  <img src="https://flathub.org/api/badge?svg" alt="Download on Flathub" style="width:220px; height:auto;">
-</a>
-
-If you don't know the difference, pick amd64.
-
-- amd64 / x86_64
-  - [AppImage](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-linux-x86_64.AppImage)
-  - [Ubuntu/Debian (.deb)](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-linux-amd64.deb)
-  - [Fedora/RHEL (.rpm)](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-linux-x86_64.rpm)
-  - [tarball](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-linux-x64.tar.gz)
-- Arm® 64 / aarch64
-  - [AppImage](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-linux-arm64.AppImage)
-  - [Ubuntu/Debian (.deb)](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-linux-arm64.deb)
-  - [Fedora/RHEL (.rpm)](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-linux-aarch64.rpm)
-  - [tarball](https://github.com/Equicord/Equibop/releases/latest/download/Equibop-linux-arm64.tar.gz)
-
-#### Community packages
-
-Below you can find unofficial packages created by the community. They are not officially supported by us, so before reporting issues, please first confirm the issue also happens on official builds. When in doubt, consult with their packager first. The flatpak and AppImage should work on any distro that [supports them](https://flatpak.org/setup/), so I recommend you just use those instead!
-
-- Arch Linux: [Equibop on the Arch user repository](https://aur.archlinux.org/packages?K=equibop)
-- NixOS: `nix-shell -p equibop`
+- [DMG](https://github.com/TK50P/Equibop-Legacy/releases/download/v2.1.6/Equibop-mac-universal.dmg)
 
 ## Building from Source
 
@@ -100,6 +62,89 @@ Packaging will create builds in the dist/ folder
 > [!NOTE]
 > On Windows, if you run the test script, you will get test errors about venmic, you can ignore these as it's a linux only module.
 
+## For Windows
+You’ll need the following 2 files:  
+- [Modified Electron 28](https://github.com/TK50P/Vesktop-Legacy/raw/refs/heads/main/local_electron.zip?download=)  
+- [electron.js](https://raw.githubusercontent.com/TK50P/Vesktop-Legacy/refs/heads/main/scripts/electron.js) (Use `curl` or `wget` to fetch)
+
+Place the unpacked, modified version of Electron 28 in the root of the source and name the folder `local_electron`.  
+Inside this folder, you **must** include the files:  
+- `electron-v28.0.0-win32-x64`
+- `electron-v28.0.0-win32-ia32`  
+- `package.json`
+
+Place the `electron.js` in `scripts` folder.
+
+Now open `package.json`. Replace `pnpm build && electron .` with `node scripts/electron.js .`. <br>
+In `"devDependencies"` section, replace `"electron"`'s version (e.g. `"^37.2.0"` with `"file:./local_electron"`). 
+
+Now, go to `"build"` section and add this line.
+```js
+"electronDist": "./local_electron/electron-v28.0.0-win32-x64",
+"electronVersion": "28.0.0",
+```
+
+For Example, if code is like this,
+```js
+    "build": {
+        "appId": "io.github.equicord.equibop",
+        "artifactName": "${productName}-${os}-${arch}.${ext}",
+        "productName": "Equibop",
+        "files": [
+            "!*",
+            "!node_modules",
+            "dist/js",
+            "static",
+            "package.json",
+            "LICENSE"
+        ],
+```
+
+Place like this.
+```js
+    "build": {
+        "appId": "io.github.equicord.equibop",
+        "artifactName": "${productName}-${os}-${arch}.${ext}",
+        "electronDist": "./local_electron/electron-v28.0.0-win32-x64",
+        "electronVersion": "28.0.0",
+        "productName": "Equibop",
+        "files": [
+            "!*",
+            "!node_modules",
+            "dist/js",
+            "static",
+            "package.json",
+            "LICENSE"
+        ],
+```
+
+### How to Build 32-Bit Version of Vesktop
+
+To build a **32-bit** version of Vesktop, change all occurrences of `x64` to `ia32`.
+
+In the following section, remove any other architecture definitions and ensure both the `nsis` and `zip` targets are explicitly set to a specific architecture (`x64` or `ia32`):
+
+```js
+"win": {
+  "target": [
+    {
+      "target": "nsis",
+      "arch": [
+        "ia32"
+      ]
+    },
+    {
+      "target": "zip",
+      "arch": [
+        "ia32"
+      ]
+    }
+  ]
+},
+```
+
+Now, run this.
+
 ```sh
 git clone https://github.com/Equicord/Equibop
 cd Equibop
@@ -107,15 +152,33 @@ cd Equibop
 # Install Dependencies
 pnpm i
 
-# Either run it without packaging
+# Compile TypeScript files
+pnpm build
+
+# Now, start the program
 pnpm start
 
-# Or package (will build packages for your OS)
+# Or package it for Windows
 pnpm package
+```
 
-# Or only build the Linux Pacman package
-pnpm package --linux pacman
+## For macOS Catalina (10.15)  
+For macOS, the setup is simpler than on Windows.
+> [!IMPORTANT]  
+> You **must** be using macOS Catalina as **host** to build it.
 
-# Or package to a directory only
-pnpm package:dir
+You can simply downgrade the Electron version as follows:
+
+```sh
+git clone https://github.com/Equicord/Equibop
+cd Equibop
+
+# Install dependencies
+pnpm i
+
+# Downgrade Electron to v32 (last version supported on Catalina, based on Chromium 128)
+pnpm i -f electron@32
+
+# Package the app
+pnpm package
 ```
