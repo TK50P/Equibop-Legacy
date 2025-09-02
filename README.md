@@ -1,6 +1,6 @@
-# Equibop [<img src="/static/icon.png" width="225" align="right" alt="Equibop">](https://github.com/Equicord/Equibop)
+# Equibop-Legacy [<img src="/static/icon.png" width="225" align="right" alt="Equibop">](https://github.com/Equicord/Equibop)
 
-Equibop is a fork of [Vesktop](https://github.com/Vencord/Vesktop).
+Equibop is a fork of [Vesktop](https://github.com/Vencord/Vesktop) but for Legacy OSes support.
 
 > [!NOTE]  
 > If you're looking for ported version of Vencord's Vesktop, please look [here](https://github.com/TK50P/Vesktop-Legacy).
