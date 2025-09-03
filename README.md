@@ -1,9 +1,9 @@
 # Equibop-Legacy [<img src="/static/icon.png" width="225" align="right" alt="Equibop">](https://github.com/Equicord/Equibop)
 
-Equibop is a fork of [Vesktop](https://github.com/Vencord/Vesktop) but for Legacy OSes support.
+Equibop is a fork of [Equibop](https://github.com/Vencord/Equibop) but for Legacy OSes support.
 
 > [!NOTE]  
-> If you're looking for ported version of Vencord's Vesktop, please look [here](https://github.com/TK50P/Vesktop-Legacy).
+> If you're looking for ported version of Vencord's Equibop, please look [here](https://github.com/TK50P/Equibop-Legacy).
 
 Ported for Windows NT 6.x and macOS Catalina.
 
@@ -17,12 +17,12 @@ Ported for Windows NT 6.x and macOS Catalina.
 **Extra included changes**
 
 - Equicord preinstalled
-- Custom Splash animations from [this PR](https://github.com/Vencord/Vesktop/pull/355)
-- Tray Customization & Voice detection and Badge from [this PR](https://github.com/Vencord/Vesktop/pull/517)
-- Global Keybind to Toggle voice status from [this PR](https://github.com/Vencord/Vesktop/pull/609)
+- Custom Splash animations from [this PR](https://github.com/Vencord/Equibop/pull/355)
+- Tray Customization & Voice detection and Badge from [this PR](https://github.com/Vencord/Equibop/pull/517)
+- Global Keybind to Toggle voice status from [this PR](https://github.com/Vencord/Equibop/pull/609)
 - Custom Arguments from [this PR](https://github.com/Equicord/Equibop/pull/46)
-- Remove (#) title prefix when Notification Badge option is toggled from [this PR](https://github.com/Vencord/Vesktop/pull/686)
-- Allow patching video & audio devices into screen share from [this PR](https://github.com/Vencord/Vesktop/pull/195)
+- Remove (#) title prefix when Notification Badge option is toggled from [this PR](https://github.com/Vencord/Equibop/pull/686)
+- Allow patching video & audio devices into screen share from [this PR](https://github.com/Vencord/Equibop/pull/195)
 
 <img width="1920" height="1080" alt="Screenshot 2025-08-30 150942" src="https://github.com/user-attachments/assets/f5813e00-9158-4ce1-9a42-1e5557c2530e" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/bdf579d9-a548-41f4-877b-f5828be39af2" />
@@ -119,9 +119,9 @@ Place like this.
         ],
 ```
 
-### How to Build 32-Bit Version of Vesktop
+### How to Build 32-Bit Version of Equibop
 
-To build a **32-bit** version of Vesktop, change all occurrences of `x64` to `ia32`.
+To build a **32-bit** version of Equibop, change all occurrences of `x64` to `ia32`.
 
 In the following section, remove any other architecture definitions and ensure both the `nsis` and `zip` targets are explicitly set to a specific architecture (`x64` or `ia32`):
 
