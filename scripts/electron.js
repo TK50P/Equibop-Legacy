@@ -7,7 +7,7 @@ const os = require("os");
 const arch = process.arch === "ia32" ? "ia32" : "x64";
 
 // Path to correct custom Electron
-const electronPath = path.resolve(__dirname, `../local_electron/electron-v28.0.0-win32-${arch}/electron.exe`);
+const electronPath = path.resolve(__dirname, `../local_electron/electron-v37.2.2-win32-${arch}/electron.exe`);
 
 // Spawn Electron with arguments
 const child = spawn(electronPath, process.argv.slice(2), {
