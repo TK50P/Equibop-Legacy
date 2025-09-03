@@ -65,23 +65,24 @@ Packaging will create builds in the dist/ folder
 ## For Windows
 You’ll need the following 2 files:  
 - [Modified Electron](https://github.com/e3kskoy7wqk/Electron-for-windows-7) (Thanks to [@e3kskoy7wqk](https://github.com/e3kskoy7wqk))
-- [electron.js](https://raw.githubusercontent.com/TK50P/Equibop-Legacy/refs/heads/main/scripts/electron.js) (Use `curl` or `wget` to fetch this file)
+- [electron.js](https://raw.githubusercontent.com/TK50P/Equibop-Legacy/refs/heads/main/scripts/electron.js) and [package.json](https://raw.githubusercontent.com/TK50P/Equibop-Legacy/refs/heads/main/local_electron/package.json) (Use `curl` or `wget` to fetch this file)
 
-Place the unpacked, modified version of Electron 28 in the root of the source and name the folder `local_electron`.  
+Place the unpacked `dist-(x86).zip` in `local_electron`, rename to `electron-v37.2.2-win32-x64` for 64-Bit, and `electron-v37.2.2-win32-ia32` for 32-Bit.
+
 Inside this folder, you **must** include the files:  
-- `electron-v37.2.2-win32-x64`
-- `electron-v37.2.2-win32-ia32`  
+- `electron-v37.2.2-win32-x64` (for 64-Bit)
+- `electron-v37.2.2-win32-ia32` (for 32-Bit)
 - `package.json`
 
 Place the `electron.js` in `scripts` folder.
 
 Now open `package.json`. Replace `pnpm build && electron .` with `node scripts/electron.js .`. <br>
-In `"devDependencies"` section, replace `"electron"`'s version (e.g. `"^37.2.0"` with `"file:./local_electron"`). 
+In `"devDependencies"` section, replace `"electron"`'s version (e.g. `"^37.2.2"` with `"file:./local_electron"`). 
 
 Now, go to `"build"` section and add this line.
 ```js
-"electronDist": "./local_electron/electron-v28.0.0-win32-x64",
-"electronVersion": "28.0.0",
+"electronDist": "./local_electron/electron-v37.2.2-win32-x64",
+"electronVersion": "37.2.2",
 ```
 
 For Example, if code is like this,
