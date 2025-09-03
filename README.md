@@ -70,7 +70,7 @@ You’ll need the following 2 files:
 Place the unpacked, modified version of Electron 28 in the root of the source and name the folder `local_electron`.  
 Inside this folder, you **must** include the files:  
 - `electron-v37.2.2-win32-x64`
-- `electron-v37.0.0-win32-ia32`  
+- `electron-v37.2.2-win32-ia32`  
 - `package.json`
 
 Place the `electron.js` in `scripts` folder.
