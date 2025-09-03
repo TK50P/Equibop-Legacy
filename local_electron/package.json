@@ -1,0 +1,8 @@
+{
+  "name": "electron",
+  "version": "37.2.2",
+  "description": "Custom Electron for Vesktop Win7",
+  "bin": {
+    "electron": "./electron.exe"
+  }
+}
