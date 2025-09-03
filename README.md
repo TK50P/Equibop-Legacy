@@ -106,8 +106,8 @@ Place like this.
     "build": {
         "appId": "io.github.equicord.equibop",
         "artifactName": "${productName}-${os}-${arch}.${ext}",
-        "electronDist": "./local_electron/electron-v28.0.0-win32-x64",
-        "electronVersion": "28.0.0",
+        "electronDist": "./local_electron/electron-v37.2.2-win32-x64",
+        "electronVersion": "37.2.2",
         "productName": "Equibop",
         "files": [
             "!*",
