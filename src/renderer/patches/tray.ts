@@ -6,16 +6,18 @@
 
 import { Logger } from "@equicord/types/utils";
 import { onceReady } from "@equicord/types/webpack";
-import { FluxDispatcher, UserStore, VoiceActions } from "@equicord/types/webpack/common";
+import { FluxDispatcher, UserStore } from "@equicord/types/webpack/common";
 
 var isInCall = false;
+var isSelfMuted = false;
+var isSelfDeafened = false;
 const logger = new Logger("VesktopTrayIcon");
 
 export function setCurrentTrayIcon() {
     if (isInCall) {
-        if (VoiceActions.isSelfDeaf()) {
+        if (isSelfDeafened) {
             VesktopNative.tray.setIcon("deafened");
-        } else if (VoiceActions.isSelfMute()) {
+        } else if (isSelfMuted) {
             VesktopNative.tray.setIcon("muted");
         } else {
             VesktopNative.tray.setIcon("idle");
@@ -118,10 +120,12 @@ onceReady.then(() => {
     });
 
     FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_DEAF", () => {
+        isSelfDeafened = !isSelfDeafened;
         if (isInCall) setCurrentTrayIcon();
     });
 
     FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_MUTE", () => {
+        isSelfMuted = !isSelfMuted;
         if (isInCall) setCurrentTrayIcon();
     });
 
@@ -132,6 +136,8 @@ onceReady.then(() => {
         } else if (params.state === "RTC_DISCONNECTED" && params.context === "default") {
             VesktopNative.tray.setIcon("icon");
             isInCall = false;
+            isSelfMuted = false;
+            isSelfDeafened = false;
         }
     });
 });
