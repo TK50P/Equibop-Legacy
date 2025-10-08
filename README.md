@@ -148,7 +148,7 @@ Now, run this.
 
 ```sh
 # Set architecture FIRST to build 32-bit (ia32) target
-set npm_config_arch=ia32   # For Windows
+set npm_config_arch=ia32
 
 git clone https://github.com/Equicord/Equibop
 cd Equibop
@@ -194,7 +194,7 @@ Open `package.json` and replace like this.
             }
         },
 ```
-
+Change to like this.
 ```js
         "mac": {
             "target": [
@@ -217,7 +217,7 @@ Open `package.json` and replace like this.
         },
 ```
 
-You can simply downgrade the Electron version as follows:
+Now, simply downgrade the Electron version as follows:
 
 ```sh
 git clone https://github.com/Equicord/Equibop
