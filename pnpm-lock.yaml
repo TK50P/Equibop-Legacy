@@ -24,8 +24,8 @@ importers:
         version: 6.6.2(patch_hash=080505564abb2ebbda932bbf8fe91540c74dd905de994888d52ffce6f882f887)
     devDependencies:
       '@equicord/types':
-        specifier: ^1.11.7
-        version: 1.11.7
+        specifier: ^1.13.2
+        version: 1.13.2(@types/react-dom@18.3.1)(@types/react@18.3.1)
       '@fal-works/esbuild-plugin-global-externals':
         specifier: ^2.1.2
         version: 2.1.2
@@ -164,8 +164,11 @@ packages:
     resolution: {integrity: sha512-fKpv9kg4SPmt+hY7SVBnIYULE9QJl8L3sCfcBsnqbJwwBwAeTLokJ9TRt9y7bK0JAzIW2y78TVVjvnQEms/yyA==}
     engines: {node: '>=16.4'}
 
-  '@equicord/types@1.11.7':
-    resolution: {integrity: sha512-6fvbtWox0p7YN9p0uOdRfJgRyq24lff3kmcg2vmel6xTyGIRONjMCPzUi76jtPVHGlw0tTBDTdTf9coUNGYp1Q==}
+  '@equicord/types@1.13.2':
+    resolution: {integrity: sha512-hZdbcYH4BKOaQJUdo/pFbMu/0q9/tFY1nOXV1DM85t9+0LdzZ5eg0tcAxJnW6U/5/WsE6a5MvmG4g8Ra1pBUpA==}
+    peerDependencies:
+      '@types/react': 18.3.1
+      '@types/react-dom': 18.3.1
 
   '@esbuild/aix-ppc64@0.25.9':
     resolution: {integrity: sha512-OaGtL73Jck6pBKjNIe24BnFE6agGl+6KxDtTfHhy1HmhthfKouEcOhqpSL64K4/0WCtbKFLOdzD/44cJ4k9opA==}
@@ -583,6 +586,11 @@ packages:
   '@typescript-eslint/visitor-keys@8.42.0':
     resolution: {integrity: sha512-3WbiuzoEowaEn8RSnhJBrxSwX8ULYE9CXaPepS2C2W3NSA5NNIvBaslpBSBElPq0UGr0xVJlXFWOAKIkyylydQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@vencord/discord-types@1.0.0':
+    resolution: {integrity: sha512-idtijKdbjiqo8k+4mo5Aq9zrQYwr2u11VmiRasaf+8+cGC5bYsMTIZl7zKLF3VdYx2a0ICjxgZtcfa1U3mv1Yg==}
+    peerDependencies:
+      '@types/react': ^19.0.10
 
   '@vencord/venmic@6.1.0':
     resolution: {integrity: sha512-YiCtzml/W8tYbGhu3jm5jfbbEnl2slKKARNK0jO+8qV979k9eFnfIRTxvhMN/SWq1h8ZNJdXVwvXpffQwq0RuA==}
@@ -1635,6 +1643,10 @@ packages:
     engines: {node: '>=10.4'}
     hasBin: true
 
+  highlight.js@11.11.1:
+    resolution: {integrity: sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==}
+    engines: {node: '>=12.0.0'}
+
   homedir-polyfill@1.0.3:
     resolution: {integrity: sha512-eSmmWE5bZTK2Nou4g0AI3zZ9rswp7GRKoKXS1BLUkvPviOqs4YTN1djQIqrXy9k5gEtdLPy86JjRwsNM9tnDcA==}
     engines: {node: '>=0.10.0'}
@@ -2147,6 +2159,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  moment@2.30.1:
+    resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
+
   ms@2.0.0:
     resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
 
@@ -2641,9 +2656,6 @@ packages:
     resolution: {integrity: sha512-o57Wcn66jMQvfHG1FlYbWeZWW/dHZhJXjpIcTfXldXEk5nz5lStPo3mK0OJQfGR3RbZUlbISexbljkJzuEj/8Q==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
 
-  standalone-electron-types@34.2.0:
-    resolution: {integrity: sha512-+BIrNe0TdZBBBRS3G/F7cPbuBipSZylSjSrJu9+sjw84+vz36a5oZ7l9NeH7aXgMWmPzPZKsTm+K0nOIvhENJQ==}
-
   stat-mode@1.0.0:
     resolution: {integrity: sha512-jH9EhtKIjuXZ2cWxmXS8ZP80XyC3iasQxMDV8jzhNJpfDb7VbQLVW4Wvsxz9QZvzV+G4YoSfBUVKDOyxLzi/sg==}
     engines: {node: '>= 6'}
@@ -2768,6 +2780,9 @@ packages:
     engines: {node: '>=18.12'}
     peerDependencies:
       typescript: '>=4.8.4'
+
+  ts-pattern@5.8.0:
+    resolution: {integrity: sha512-kIjN2qmWiHnhgr5DAkAafF9fwb0T5OhMVSWrm8XEdTFnX6+wfXwYOFjeF86UZ54vduqiR7BfqScFmXSzSaH8oA==}
 
   tsconfig-paths@3.15.0:
     resolution: {integrity: sha512-2Ac2RgzDe/cn48GvOe3M+o82pEFewD3UPbyoUHHdKasHwJKjds4fLXWf/Ux5kATBKN20oaFGu+jbElp1pos0mg==}
@@ -3118,13 +3133,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@equicord/types@1.11.7':
+  '@equicord/types@1.13.2(@types/react-dom@18.3.1)(@types/react@18.3.1)':
     dependencies:
       '@types/lodash': 4.17.15
       '@types/node': 22.18.1
       '@types/react': 18.3.1
       '@types/react-dom': 18.3.1
-      standalone-electron-types: 34.2.0
+      '@vencord/discord-types': 1.0.0(@types/react@18.3.1)
+      highlight.js: 11.11.1
+      moment: 2.30.1
+      ts-pattern: 5.8.0
       type-fest: 4.41.0
 
   '@esbuild/aix-ppc64@0.25.9':
@@ -3520,6 +3538,12 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.42.0
       eslint-visitor-keys: 4.2.1
+
+  '@vencord/discord-types@1.0.0(@types/react@18.3.1)':
+    dependencies:
+      '@types/react': 18.3.1
+      moment: 2.30.1
+      type-fest: 4.41.0
 
   '@vencord/venmic@6.1.0':
     dependencies:
@@ -4980,6 +5004,8 @@ snapshots:
   hexy@0.3.5:
     optional: true
 
+  highlight.js@11.11.1: {}
+
   homedir-polyfill@1.0.3:
     dependencies:
       parse-passwd: 1.0.0
@@ -5474,6 +5500,8 @@ snapshots:
       is-extendable: 1.0.1
 
   mkdirp@1.0.4: {}
+
+  moment@2.30.1: {}
 
   ms@2.0.0: {}
 
@@ -6031,10 +6059,6 @@ snapshots:
     dependencies:
       minipass: 3.3.6
 
-  standalone-electron-types@34.2.0:
-    dependencies:
-      '@types/node': 22.18.1
-
   stat-mode@1.0.0: {}
 
   static-extend@0.1.2:
@@ -6186,6 +6210,8 @@ snapshots:
   ts-api-utils@2.1.0(typescript@5.9.2):
     dependencies:
       typescript: 5.9.2
+
+  ts-pattern@5.8.0: {}
 
   tsconfig-paths@3.15.0:
     dependencies:
