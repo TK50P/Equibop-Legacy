@@ -34,11 +34,11 @@
         "@vencord/venmic": "^6.1.0"
     },
     "devDependencies": {
+        "@equicord/types": "^1.13.2",
         "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
         "@stylistic/eslint-plugin": "^5.3.1",
         "@types/node": "^24.3.1",
         "@types/react": "18.3.1",
-        "@equicord/types": "^1.13.2",
         "dotenv": "^17.2.2",
         "electron": "^38.0.0",
         "electron-builder": "^26.0.12",
@@ -58,7 +58,7 @@
         "typescript-eslint": "^8.42.0",
         "xml-formatter": "^3.6.6"
     },
-    "packageManager": "pnpm@10.7.1",
+    "packageManager": "pnpm@10.18.2",
     "engines": {
         "node": ">=18",
         "pnpm": ">=8"
