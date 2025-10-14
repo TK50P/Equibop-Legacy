@@ -6,6 +6,7 @@
 
 import "./screenSharePicker.css";
 
+import { FormSwitch } from "@equicord/types/components";
 import { closeModal, Logger, Modals, ModalSize, openModal, useAwaiter } from "@equicord/types/utils";
 import { onceReady } from "@equicord/types/webpack";
 import {
@@ -15,7 +16,6 @@ import {
     Forms,
     MediaEngineStore,
     Select,
-    Switch,
     Text,
     UserStore,
     useState
@@ -210,67 +210,62 @@ function AudioSettingsModal({
                 <Modals.ModalCloseButton onClick={close} />
             </Modals.ModalHeader>
             <Modals.ModalContent className={cl("modal")}>
-                <Switch
+                <FormSwitch
                     hideBorder
                     onChange={v => (Settings.audio = { ...Settings.audio, workaround: v })}
                     value={Settings.audio?.workaround ?? false}
-                    note={
+                    title="Microphone Workaround"
+                    description={
                         <>
                             Work around an issue that causes the microphone to be shared instead of the correct audio.
                             Only enable if you're experiencing this issue.
                         </>
                     }
-                >
-                    Microphone Workaround
-                </Switch>
-                <Switch
+                />
+                <FormSwitch
                     hideBorder
                     onChange={v => (Settings.audio = { ...Settings.audio, onlySpeakers: v })}
                     value={Settings.audio?.onlySpeakers ?? true}
-                    note={
+                    title="Only Speakers"
+                    description={
                         <>
                             When sharing entire desktop audio, only share apps that play to a speaker. You may want to
                             disable this when using "mix bussing".
                         </>
                     }
-                >
-                    Only Speakers
-                </Switch>
-                <Switch
+                />
+                <FormSwitch
                     hideBorder
                     onChange={v => (Settings.audio = { ...Settings.audio, onlyDefaultSpeakers: v })}
                     value={Settings.audio?.onlyDefaultSpeakers ?? true}
-                    note={
+                    title="Only Default Speakers"
+                    description={
                         <>
                             When sharing entire desktop audio, only share apps that play to the <b>default</b> speakers.
                             You may want to disable this when using "mix bussing".
                         </>
                     }
-                >
-                    Only Default Speakers
-                </Switch>
-                <Switch
+                />
+                <FormSwitch
                     hideBorder
                     onChange={v => (Settings.audio = { ...Settings.audio, ignoreInputMedia: v })}
                     value={Settings.audio?.ignoreInputMedia ?? true}
-                    note={<>Exclude nodes that are intended to capture audio.</>}
-                >
-                    Ignore Inputs
-                </Switch>
-                <Switch
+                    title="Ignore Inputs"
+                    description={<>Exclude nodes that are intended to capture audio.</>}
+                />
+                <FormSwitch
                     hideBorder
                     onChange={v => (Settings.audio = { ...Settings.audio, ignoreVirtual: v })}
                     value={Settings.audio?.ignoreVirtual ?? false}
-                    note={
+                    title="Ignore Virtual"
+                    description={
                         <>
                             Exclude virtual nodes, such as nodes belonging to loopbacks. This might be useful when using
                             "mix bussing".
                         </>
                     }
-                >
-                    Ignore Virtual
-                </Switch>
-                <Switch
+                />
+                <FormSwitch
                     hideBorder
                     onChange={v =>
                         (Settings.audio = {
@@ -280,22 +275,20 @@ function AudioSettingsModal({
                         })
                     }
                     value={Settings.audio?.ignoreDevices ?? true}
-                    note={<>Exclude device nodes, such as nodes belonging to microphones or speakers.</>}
-                >
-                    Ignore Devices
-                </Switch>
-                <Switch
+                    title="Ignore Devices"
+                    description={<>Exclude device nodes, such as nodes belonging to microphones or speakers.</>}
+                />
+                <FormSwitch
                     hideBorder
                     onChange={value => {
                         Settings.audio = { ...Settings.audio, granularSelect: value };
                         setAudioSources("None");
                     }}
                     value={Settings.audio?.granularSelect ?? false}
-                    note={<>Allow to select applications more granularly.</>}
-                >
-                    Granular Selection
-                </Switch>
-                <Switch
+                    title="Granular Selection"
+                    description={<>Allow to select applications more granularly.</>}
+                />
+                <FormSwitch
                     hideBorder
                     onChange={value => {
                         Settings.audio = { ...Settings.audio, deviceSelect: value };
@@ -303,15 +296,14 @@ function AudioSettingsModal({
                     }}
                     value={Settings.audio?.deviceSelect ?? false}
                     disabled={Settings.audio?.ignoreDevices}
-                    note={
+                    title="Device Selection"
+                    description={
                         <>
                             Allow to select devices such as microphones. Requires <b>Ignore Devices</b> to be turned
                             off.
                         </>
                     }
-                >
-                    Device Selection
-                </Switch>
+                />
             </Modals.ModalContent>
             <Modals.ModalFooter className={cl("footer")}>
                 <Button color={Button.Colors.TRANSPARENT} onClick={close}>
@@ -486,14 +478,13 @@ function StreamSettingsUi({
                         </div>
 
                         {isWindows && (
-                            <Switch
+                            <FormSwitch
                                 value={settings.audio}
                                 onChange={checked => setSettings(s => ({ ...s, audio: checked }))}
                                 hideBorder
                                 className={cl("audio")}
-                            >
-                                Stream With Audio
-                            </Switch>
+                                title="Stream With Audio"
+                            />
                         )}
                     </section>
                 </div>

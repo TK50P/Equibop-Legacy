@@ -1,37 +1,35 @@
 name: Test
 on:
-    push:
-        branches:
-            - main
-            - dev
-    pull_request:
-        branches:
-            - main
-            - dev
-
-permissions: write-all
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4 # Install pnpm using packageManager key in package.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # Install pnpm using packageManager key in package.json
 
-            - name: Use Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  cache: "pnpm"
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
 
-            - name: Install dependencies
-              run: pnpm install --no-frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
 
-            - name: Run tests
-              run: pnpm test
+      - name: Run tests
+        run: pnpm test
 
-            - name: Test if it compiles
-              run: |
-                  pnpm build
-                  pnpm build --dev
+      - name: Test if it compiles
+        run: |
+          pnpm build
+          pnpm build --dev

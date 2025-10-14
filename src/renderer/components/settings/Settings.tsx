@@ -6,8 +6,8 @@
 
 import "./settings.css";
 
-import { ErrorBoundary } from "@equicord/types/components";
-import { Forms, Text } from "@equicord/types/webpack/common";
+import { Divider, ErrorBoundary } from "@equicord/types/components";
+import { Text } from "@equicord/types/webpack/common";
 import { ComponentType } from "react";
 import { Settings, useSettings } from "renderer/settings";
 import { isLinux, isMac, isWindows } from "renderer/utils";
@@ -182,17 +182,16 @@ function SettingsSections() {
                         <VesktopSettingsSwitch
                             value={Settings[key as any] ?? defaultValue}
                             onChange={v => (Settings[key as any] = v)}
-                            note={description}
+                            title={title}
+                            description={description}
                             disabled={disabled?.()}
                             key={key}
-                        >
-                            {title}
-                        </VesktopSettingsSwitch>
+                        />
                     );
                 })}
             </div>
 
-            {i < arr.length - 1 && <Forms.FormDivider className="vcd-settings-category-divider" />}
+            {i < arr.length - 1 && <Divider className="vcd-settings-category-divider" />}
         </div>
     ));
 
@@ -202,12 +201,12 @@ function SettingsSections() {
 export default ErrorBoundary.wrap(
     function SettingsUI() {
         return (
-            <Forms.FormSection>
+            <section>
                 <Text variant="heading-xl/semibold" color="header-primary" className="vcd-settings-title">
                     Equibop Settings
                 </Text>
                 <SettingsSections />
-            </Forms.FormSection>
+            </section>
         );
     },
     {

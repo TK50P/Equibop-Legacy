@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+import { Divider } from "@equicord/types/components";
 import { Margins, Modals, ModalSize, openModal } from "@equicord/types/utils";
 import { Button, Forms, TextInput } from "@equicord/types/webpack/common";
 import { useSettings } from "renderer/settings";
@@ -48,7 +49,7 @@ export const Arguments: SettingsComponent = ({ settings }) => {
     };
 
     return (
-        <Forms.FormSection>
+        <section>
             <div className="vcd-tray-settings">
                 <div className="vcd-tray-container">
                     <div className="vcd-tray-settings-labels">
@@ -57,8 +58,8 @@ export const Arguments: SettingsComponent = ({ settings }) => {
                     </div>
                     <Button onClick={openTextModal}>Configure</Button>
                 </div>
-                <Forms.FormDivider className={Margins.top20 + " " + Margins.bottom20} />
+                <Divider className={Margins.top20 + " " + Margins.bottom20} />
             </div>
-        </Forms.FormSection>
+        </section>
     );
 };

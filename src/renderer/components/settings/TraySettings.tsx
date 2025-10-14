@@ -6,8 +6,9 @@
 
 import "./traySetting.css";
 
+import { Divider, FormSwitch } from "@equicord/types/components";
 import { Margins, Modals, ModalSize, openModal } from "@equicord/types/utils";
-import { Button, ColorPicker, Forms, Select, Switch, Toasts } from "@equicord/types/webpack/common";
+import { Button, ColorPicker, Forms, Select, Toasts } from "@equicord/types/webpack/common";
 import { setCurrentTrayIcon } from "renderer/patches/tray";
 import { useSettings } from "renderer/settings";
 import { isLinux } from "renderer/utils";
@@ -119,7 +120,7 @@ function TrayModalComponent({ modalProps, close }: { modalProps: any; close: () 
             <Modals.ModalContent className="vcd-custom-tray-modal">
                 {Object.entries(statusToSettingsKey).map(([iconName, { key, label }]) => (
                     <div key={iconName}>
-                        <Forms.FormSection className="vcd-custom-tray-icon-section">
+                        <section className="vcd-custom-tray-icon-section">
                             <div className="vcd-custom-tray-buttons">
                                 {trayEditButton(iconName)}
                                 <Button
@@ -145,8 +146,8 @@ function TrayModalComponent({ modalProps, close }: { modalProps: any; close: () 
                             <div>
                                 <Forms.FormText>{label}</Forms.FormText>
                             </div>
-                        </Forms.FormSection>
-                        <Forms.FormDivider className={`${Margins.top8} ${Margins.bottom8}`} />
+                        </section>
+                        <Divider className={`${Margins.top8} ${Margins.bottom8}`} />
                     </div>
                 ))}
             </Modals.ModalContent>
@@ -161,16 +162,15 @@ const openTrayModal = () => {
 
 export const TraySwitch: SettingsComponent = ({ settings }) => {
     return (
-        <Switch
+        <FormSwitch
             value={settings.tray ?? true}
             onChange={async v => {
                 settings.tray = v;
                 setCurrentTrayIcon();
             }}
-            note="Add a system tray entry for Equibop"
-        >
-            Enable Tray Icon
-        </Switch>
+            title="Enable Tray Icon"
+            description="Add a system tray entry for Equibop"
+        />
     );
 };
 
@@ -193,7 +193,7 @@ export const CustomizeTraySwitch: SettingsComponent = ({ settings }) => {
                         Configure
                     </Button>
                 </div>
-                <Forms.FormDivider className={Margins.top20 + " " + Margins.bottom20} />
+                <Divider className={Margins.top20 + " " + Margins.bottom20} />
             </div>
         </>
     );
@@ -224,7 +224,7 @@ export const TrayColorTypeSelect: SettingsComponent = ({ settings }) => {
                 serialize={s => s}
                 className="vcd-tray-settings-select"
             ></Select>
-            <Forms.FormDivider className={Margins.top20 + " " + Margins.bottom20} />
+            <Divider className={Margins.top20 + " " + Margins.bottom20} />
         </div>
     );
 };
@@ -249,7 +249,7 @@ export const TrayIconPicker: SettingsComponent = ({ settings }) => {
                     suggestedColors={presets}
                 />
             </div>
-            <Forms.FormDivider className={Margins.top20 + " " + Margins.bottom20} />
+            <Divider className={Margins.top20 + " " + Margins.bottom20} />
         </div>
     );
 };
@@ -277,7 +277,7 @@ export const TrayFillColorSwitch: SettingsComponent = ({ settings }) => {
                 isSelected={v => v === settings.trayAutoFill}
                 serialize={s => s}
             ></Select>
-            <Forms.FormDivider className={Margins.top20 + " " + Margins.bottom20} />
+            <Divider className={Margins.top20 + " " + Margins.bottom20} />
         </div>
     );
 };

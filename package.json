@@ -34,7 +34,7 @@
         "@vencord/venmic": "^6.1.0"
     },
     "devDependencies": {
-        "@equicord/types": "^1.13.2",
+        "@equicord/types": "^1.13.3",
         "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
         "@stylistic/eslint-plugin": "^5.3.1",
         "@types/node": "^24.3.1",

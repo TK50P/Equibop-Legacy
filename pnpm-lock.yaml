@@ -24,8 +24,8 @@ importers:
         version: 6.6.2(patch_hash=080505564abb2ebbda932bbf8fe91540c74dd905de994888d52ffce6f882f887)
     devDependencies:
       '@equicord/types':
-        specifier: ^1.13.2
-        version: 1.13.2(@types/react-dom@18.3.1)(@types/react@18.3.1)
+        specifier: ^1.13.3
+        version: 1.13.3(@types/react-dom@18.3.1)(@types/react@18.3.1)
       '@fal-works/esbuild-plugin-global-externals':
         specifier: ^2.1.2
         version: 2.1.2
@@ -164,8 +164,8 @@ packages:
     resolution: {integrity: sha512-fKpv9kg4SPmt+hY7SVBnIYULE9QJl8L3sCfcBsnqbJwwBwAeTLokJ9TRt9y7bK0JAzIW2y78TVVjvnQEms/yyA==}
     engines: {node: '>=16.4'}
 
-  '@equicord/types@1.13.2':
-    resolution: {integrity: sha512-hZdbcYH4BKOaQJUdo/pFbMu/0q9/tFY1nOXV1DM85t9+0LdzZ5eg0tcAxJnW6U/5/WsE6a5MvmG4g8Ra1pBUpA==}
+  '@equicord/types@1.13.3':
+    resolution: {integrity: sha512-f8pMQaB3+kGEM/wVFknAAJ1oSgZSBabO/bwYhea5U8pcmi3XE/wbKPRUxa5jg1cIsv8veflYUHXtA7Aaq00vwA==}
     peerDependencies:
       '@types/react': 18.3.1
       '@types/react-dom': 18.3.1
@@ -3133,7 +3133,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@equicord/types@1.13.2(@types/react-dom@18.3.1)(@types/react@18.3.1)':
+  '@equicord/types@1.13.3(@types/react-dom@18.3.1)(@types/react@18.3.1)':
     dependencies:
       '@types/lodash': 4.17.15
       '@types/node': 22.18.1
