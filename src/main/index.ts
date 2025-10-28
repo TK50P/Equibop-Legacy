@@ -89,8 +89,8 @@ function init() {
 
     disabledFeatures.forEach(feat => enabledFeatures.delete(feat));
 
-    const enabledFeaturesArray = enabledFeatures.values().filter(Boolean).toArray();
-    const disabledFeaturesArray = disabledFeatures.values().filter(Boolean).toArray();
+    const enabledFeaturesArray = [...enabledFeatures].filter(Boolean);
+    const disabledFeaturesArray = [...disabledFeatures].filter(Boolean);
 
     if (enabledFeaturesArray.length) {
         app.commandLine.appendSwitch("enable-features", enabledFeaturesArray.join(","));
