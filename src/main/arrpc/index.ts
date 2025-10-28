@@ -5,7 +5,6 @@
  */
 
 import { ChildProcess, spawn } from "child_process";
-import { app } from "electron";
 import { existsSync } from "fs";
 import { join, resolve } from "path";
 import { IpcEvents } from "shared/IpcEvents";
@@ -54,28 +53,23 @@ function getBundledBunPath(): string {
 
     debugLog(`Looking for bun binary for platform=${platform}, arch=${arch}`);
 
-    const possiblePaths = [
-        // packaged app with resourcesPath
-        process.resourcesPath
-            ? join(process.resourcesPath, "bun", `${platform}-${arch}`, `bun-${bunPlatform}-${arch}`, bunBinary)
-            : null,
-        // system Electron (AUR, etc) - app.asar is in the resources directory
-        join(app.getAppPath(), "..", "bun", `${platform}-${arch}`, `bun-${bunPlatform}-${arch}`, bunBinary),
-        // development or alternative structure
-        join(app.getAppPath(), "bun", `${platform}-${arch}`, `bun-${bunPlatform}-${arch}`, bunBinary)
-    ].filter(Boolean);
+    if (process.resourcesPath) {
+        const bunPath = join(
+            process.resourcesPath,
+            "bun",
+            `${platform}-${arch}`,
+            `bun-${bunPlatform}-${arch}`,
+            bunBinary
+        );
+        debugLog(`Checking packaged bun path: ${bunPath}`);
 
-    debugLog("Checking possible bun paths:", possiblePaths);
-
-    for (const bunPath of possiblePaths) {
-        if (bunPath && existsSync(bunPath)) {
-            debugLog(`Found bun binary at: ${bunPath}`);
+        if (existsSync(bunPath)) {
+            debugLog(`Found bundled bun at: ${bunPath}`);
             return bunPath;
         }
     }
 
-    debugLog("No bundled bun found, falling back to system bun");
-    // fallback to system bun
+    debugLog("No bundled bun found");
     return "bun";
 }
 
@@ -142,11 +136,13 @@ export async function initArRPC() {
 
     try {
         // check for unpacked version first (for production builds)
-        const workerPath = resolve(__dirname, "./arrpc/bunWorker.js").replace("app.asar", "app.asar.unpacked");
+        const workerDir = resolve(__dirname, "..").replace("app.asar", "app.asar.unpacked");
+        const workerPath = join(workerDir, "js", "arrpc", "bunWorker.js");
         const resolvedBunPath = getBundledBunPath();
 
         debugLog("Initializing arRPC");
         debugLog(`Worker path: ${workerPath}`);
+        debugLog(`Worker directory: ${workerDir}`);
         debugLog(`Bun path: ${resolvedBunPath}`);
         debugLog(`Spawn args: [${workerPath}]`);
 
@@ -156,6 +152,7 @@ export async function initArRPC() {
 
         bunProcess = spawn(resolvedBunPath, [workerPath], {
             stdio: ["ignore", "pipe", "pipe", "ipc"],
+            cwd: workerDir,
             env: process.env,
             windowsHide: true
         });

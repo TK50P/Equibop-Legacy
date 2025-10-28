@@ -4,6 +4,11 @@ import { join } from "path";
 import { addAssetsCar } from "./addAssetsCar.mjs";
 
 async function copyBunBinaries(context) {
+    if (process.env.SKIP_BUN_DOWNLOAD === "true") {
+        console.log("SKIP_BUN_DOWNLOAD is set, skipping bun binary copy");
+        return;
+    }
+
     const { electronPlatformName, arch, appOutDir } = context;
 
     // map electron-builder arch enum to string
@@ -27,14 +32,13 @@ async function copyBunBinaries(context) {
             cpSync(sourcePath, destPath, { recursive: true });
         }
     } else if (electronPlatformName === "linux") {
-        ["linux-x64", "linux-arm64"].forEach(bunPlatformArch => {
-            const sourcePath = join(bunSourceDir, bunPlatformArch);
-            if (existsSync(sourcePath)) {
-                const destPath = join(bunDestDir, bunPlatformArch);
-                console.log(`Copying Bun binary for ${bunPlatformArch}...`);
-                cpSync(sourcePath, destPath, { recursive: true });
-            }
-        });
+        const bunPlatformArch = `linux-${archString}`;
+        const sourcePath = join(bunSourceDir, bunPlatformArch);
+        if (existsSync(sourcePath)) {
+            const destPath = join(bunDestDir, bunPlatformArch);
+            console.log(`Copying Bun binary for ${bunPlatformArch}...`);
+            cpSync(sourcePath, destPath, { recursive: true });
+        }
     } else if (electronPlatformName === "win32") {
         const bunPlatformArch = "win32-x64";
         const sourcePath = join(bunSourceDir, bunPlatformArch);

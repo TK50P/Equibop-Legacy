@@ -2,6 +2,11 @@ import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import { file, spawn, write } from "bun";
 
+if (process.env.SKIP_BUN_DOWNLOAD === "true") {
+    console.log("SKIP_BUN_DOWNLOAD is set, skipping bun download...");
+    process.exit(0);
+}
+
 const BUN_VERSION = "1.3.1";
 const OUTPUT_DIR = join(import.meta.dir, "../../resources/bun");
 

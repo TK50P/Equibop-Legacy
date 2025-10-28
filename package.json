@@ -14,6 +14,7 @@
         "buildLibVesktop": "bun install --cwd packages/libvesktop && bun run --cwd packages/libvesktop build",
         "package": "bun run build && electron-builder",
         "package:dir": "bun run build && electron-builder --dir",
+        "package:packager": "bun run build && SKIP_BUN_DOWNLOAD=true electron-builder --linux --dir && bun run scripts/build/packageForPackagers.mts",
         "lint": "eslint",
         "lint:fix": "bun lint --fix",
         "start": "bun run build && electron .",
@@ -57,7 +58,8 @@
         "type-fest": "^5.1.0",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.46.2",
-        "xml-formatter": "^3.6.7"
+        "xml-formatter": "^3.6.7",
+        "@types/bun": "^1.3.1"
     },
     "engines": {
         "bun": ">=1.3.0"
