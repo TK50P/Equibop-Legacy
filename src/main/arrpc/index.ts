@@ -50,6 +50,7 @@ function getBundledBunPath(): string {
     if (platform === "win32") bunBinary = "bun.exe";
 
     const bunPlatform = platform === "win32" ? "windows" : platform;
+    const bunArch = arch === "arm64" ? "aarch64" : arch;
 
     debugLog(`Looking for bun binary for platform=${platform}, arch=${arch}`);
 
@@ -58,7 +59,7 @@ function getBundledBunPath(): string {
             process.resourcesPath,
             "bun",
             `${platform}-${arch}`,
-            `bun-${bunPlatform}-${arch}`,
+            `bun-${bunPlatform}-${bunArch}`,
             bunBinary
         );
         debugLog(`Checking packaged bun path: ${bunPath}`);
