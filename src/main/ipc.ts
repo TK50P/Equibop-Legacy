@@ -7,8 +7,7 @@
 if (process.platform === "linux") import("./venmic");
 
 import { execFile } from "node:child_process";
-import type { FSWatcher } from "node:fs";
-import { mkdirSync, readFileSync, watch } from "node:fs";
+import { type FSWatcher, mkdirSync, readFileSync, watch } from "node:fs";
 import { open, readFile } from "node:fs/promises";
 import { release } from "node:os";
 import { join } from "node:path";
