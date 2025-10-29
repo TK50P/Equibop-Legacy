@@ -16,7 +16,7 @@ type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMu
 let isInCall = false;
 let currentVariant: TrayVariant | null = null;
 
-const unsubscribeFunctions: Array<() => void> = [];
+const subscriptions: Array<{ event: string; callback: (data: any) => void }> = [];
 
 function getTrayVariantForVoiceState(): TrayVariant | null {
     if (!isInCall) return null;
@@ -39,54 +39,56 @@ function updateTrayIcon() {
 }
 
 export function cleanupTraySubscriptions() {
-    unsubscribeFunctions.forEach(unsub => unsub());
-    unsubscribeFunctions.length = 0;
+    subscriptions.forEach(({ event, callback }) => {
+        FluxDispatcher.unsubscribe(event, callback);
+    });
+    subscriptions.length = 0;
 }
 
 onceReady.then(() => {
     const userID = UserStore.getCurrentUser().id;
 
-    unsubscribeFunctions.push(
-        FluxDispatcher.subscribe("SPEAKING", params => {
-            if (params.userId === userID && params.context === "default") {
-                if (params.speakingFlags) {
-                    if (currentVariant !== "traySpeaking") {
-                        currentVariant = "traySpeaking";
-                        VesktopNative.tray.setVoiceState("traySpeaking");
-                    }
-                } else {
-                    updateTrayIcon();
+    const speakingCallback = (params: any) => {
+        if (params.userId === userID && params.context === "default") {
+            if (params.speakingFlags) {
+                if (currentVariant !== "traySpeaking") {
+                    currentVariant = "traySpeaking";
+                    VesktopNative.tray.setVoiceState("traySpeaking");
                 }
+            } else {
+                updateTrayIcon();
             }
-        })
-    );
+        }
+    };
+    FluxDispatcher.subscribe("SPEAKING", speakingCallback);
+    subscriptions.push({ event: "SPEAKING", callback: speakingCallback });
 
-    unsubscribeFunctions.push(
-        FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_DEAF", () => {
-            if (isInCall) updateTrayIcon();
-        })
-    );
+    const deafCallback = () => {
+        if (isInCall) updateTrayIcon();
+    };
+    FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_DEAF", deafCallback);
+    subscriptions.push({ event: "AUDIO_TOGGLE_SELF_DEAF", callback: deafCallback });
 
-    unsubscribeFunctions.push(
-        FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_MUTE", () => {
-            if (isInCall) updateTrayIcon();
-        })
-    );
+    const muteCallback = () => {
+        if (isInCall) updateTrayIcon();
+    };
+    FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_MUTE", muteCallback);
+    subscriptions.push({ event: "AUDIO_TOGGLE_SELF_MUTE", callback: muteCallback });
 
-    unsubscribeFunctions.push(
-        FluxDispatcher.subscribe("RTC_CONNECTION_STATE", params => {
-            if (params.context === "default") {
-                if (params.state === "RTC_CONNECTED") {
-                    isInCall = true;
-                    VesktopNative.tray.setVoiceCallState(true);
-                    updateTrayIcon();
-                } else if (params.state === "RTC_DISCONNECTED") {
-                    isInCall = false;
-                    currentVariant = null;
-                    VesktopNative.tray.setVoiceCallState(false);
-                    setBadge();
-                }
+    const rtcCallback = (params: any) => {
+        if (params.context === "default") {
+            if (params.state === "RTC_CONNECTED") {
+                isInCall = true;
+                VesktopNative.tray.setVoiceCallState(true);
+                updateTrayIcon();
+            } else if (params.state === "RTC_DISCONNECTED") {
+                isInCall = false;
+                currentVariant = null;
+                VesktopNative.tray.setVoiceCallState(false);
+                setBadge();
             }
-        })
-    );
+        }
+    };
+    FluxDispatcher.subscribe("RTC_CONNECTION_STATE", rtcCallback);
+    subscriptions.push({ event: "RTC_CONNECTION_STATE", callback: rtcCallback });
 });

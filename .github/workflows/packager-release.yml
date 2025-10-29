@@ -1,8 +1,9 @@
 name: Packager Release
 on:
-    push:
-        tags:
-            - v*
+    release:
+        types:
+            - published
+    workflow_dispatch:
 permissions:
     contents: write
 jobs:
@@ -17,6 +18,6 @@ jobs:
               run: bun run package:packager
             - name: Upload packager tarballs to release
               run: |
-                  gh release upload ${{ github.ref_name }} dist/*-packager.tar.gz --clobber
+                  gh release upload "${{ github.event.release.tag_name }}" dist/*-packager.tar.gz --clobber
               env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
