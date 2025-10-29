@@ -34,15 +34,6 @@ jobs:
             - name: Build
               run: bun run build
 
-            - name: Build Packager Tarball (Linux only, before normal build)
-              if: ${{ matrix.platform == 'linux' }}
-              run: |
-                  bun run package:packager
-                  mkdir -p packager-dist
-                  mv dist/*-packager.tar.gz packager-dist/ || true
-              env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
             - name: Run Electron Builder
               if: ${{ matrix.platform != 'mac' }}
               run: |
@@ -56,11 +47,3 @@ jobs:
                   bun run electron-builder --${{ matrix.platform }} --publish always
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Upload Packager Tarballs (Linux only)
-              if: ${{ matrix.platform == 'linux' }}
-              uses: softprops/action-gh-release@v1
-              with:
-                  files: packager-dist/*.tar.gz
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

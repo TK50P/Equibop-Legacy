@@ -1,0 +1,30 @@
+name: Packager Release
+
+on:
+    push:
+        tags:
+            - v*
+
+permissions:
+    contents: write
+
+jobs:
+    packager-tarballs:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v2
+
+            - name: Install dependencies
+              run: bun install
+
+            - name: Build packager tarballs
+              run: bun run package:packager
+
+            - name: Upload packager tarballs to release
+              uses: softprops/action-gh-release@v1
+              with:
+                  files: dist/*-packager.tar.gz
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
