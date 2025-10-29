@@ -103,6 +103,13 @@ export function destroyArRPC() {
     if (!bunProcess) return;
 
     debugLog("Destroying arRPC process");
+
+    bunProcess.removeAllListeners("message");
+    bunProcess.removeAllListeners("error");
+    bunProcess.removeAllListeners("exit");
+    bunProcess.stdout?.removeAllListeners("data");
+    bunProcess.stderr?.removeAllListeners("data");
+
     bunProcess.kill();
     bunProcess = null as any;
     serverPort = null;

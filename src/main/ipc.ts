@@ -7,6 +7,7 @@
 if (process.platform === "linux") import("./venmic");
 
 import { execFile } from "node:child_process";
+import type { FSWatcher } from "node:fs";
 import { mkdirSync, readFileSync, watch } from "node:fs";
 import { open, readFile } from "node:fs/promises";
 import { release } from "node:os";
@@ -170,10 +171,13 @@ function readCss() {
     return readFile(VENCORD_QUICKCSS_FILE, "utf-8").catch(() => "");
 }
 
+let quickCssWatcher: FSWatcher | null = null;
+let themesWatcher: FSWatcher | null = null;
+
 open(VENCORD_QUICKCSS_FILE, "a+")
     .then(fd => {
         fd.close();
-        watch(
+        quickCssWatcher = watch(
             VENCORD_QUICKCSS_FILE,
             { persistent: false },
             debounce(async () => {
@@ -186,13 +190,26 @@ open(VENCORD_QUICKCSS_FILE, "a+")
     });
 
 mkdirSync(VENCORD_THEMES_DIR, { recursive: true });
-watch(
+themesWatcher = watch(
     VENCORD_THEMES_DIR,
     { persistent: false },
     debounce(() => {
         mainWin?.webContents.postMessage("VencordThemeUpdate", void 0);
     })
 );
+
+export function cleanupFileWatchers() {
+    if (quickCssWatcher) {
+        quickCssWatcher.close();
+        quickCssWatcher = null;
+    }
+    if (themesWatcher) {
+        themesWatcher.close();
+        themesWatcher = null;
+    }
+}
+
+app.on("quit", cleanupFileWatchers);
 
 handle(IpcEvents.VOICE_STATE_CHANGED, (_, variant: string) => {
     AppEvents.emit("setTrayVariant", variant as any);

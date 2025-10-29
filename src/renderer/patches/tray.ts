@@ -16,6 +16,8 @@ type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMu
 let isInCall = false;
 let currentVariant: TrayVariant | null = null;
 
+const unsubscribeFunctions: Array<() => void> = [];
+
 function getTrayVariantForVoiceState(): TrayVariant | null {
     if (!isInCall) return null;
 
@@ -36,42 +38,55 @@ function updateTrayIcon() {
     }
 }
 
+export function cleanupTraySubscriptions() {
+    unsubscribeFunctions.forEach(unsub => unsub());
+    unsubscribeFunctions.length = 0;
+}
+
 onceReady.then(() => {
     const userID = UserStore.getCurrentUser().id;
 
-    FluxDispatcher.subscribe("SPEAKING", params => {
-        if (params.userId === userID && params.context === "default") {
-            if (params.speakingFlags) {
-                if (currentVariant !== "traySpeaking") {
-                    currentVariant = "traySpeaking";
-                    VesktopNative.tray.setVoiceState("traySpeaking");
+    unsubscribeFunctions.push(
+        FluxDispatcher.subscribe("SPEAKING", params => {
+            if (params.userId === userID && params.context === "default") {
+                if (params.speakingFlags) {
+                    if (currentVariant !== "traySpeaking") {
+                        currentVariant = "traySpeaking";
+                        VesktopNative.tray.setVoiceState("traySpeaking");
+                    }
+                } else {
+                    updateTrayIcon();
                 }
-            } else {
-                updateTrayIcon();
             }
-        }
-    });
+        })
+    );
 
-    FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_DEAF", () => {
-        if (isInCall) updateTrayIcon();
-    });
+    unsubscribeFunctions.push(
+        FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_DEAF", () => {
+            if (isInCall) updateTrayIcon();
+        })
+    );
 
-    FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_MUTE", () => {
-        if (isInCall) updateTrayIcon();
-    });
+    unsubscribeFunctions.push(
+        FluxDispatcher.subscribe("AUDIO_TOGGLE_SELF_MUTE", () => {
+            if (isInCall) updateTrayIcon();
+        })
+    );
 
-    FluxDispatcher.subscribe("RTC_CONNECTION_STATE", params => {
-        if (params.context === "default") {
-            if (params.state === "RTC_CONNECTED") {
-                isInCall = true;
-                VesktopNative.tray.setVoiceCallState(true);
-                updateTrayIcon();
-            } else if (params.state === "RTC_DISCONNECTED") {
-                isInCall = false;
-                currentVariant = null;
-                VesktopNative.tray.setVoiceCallState(false);
-                setBadge();
+    unsubscribeFunctions.push(
+        FluxDispatcher.subscribe("RTC_CONNECTION_STATE", params => {
+            if (params.context === "default") {
+                if (params.state === "RTC_CONNECTED") {
+                    isInCall = true;
+                    VesktopNative.tray.setVoiceCallState(true);
+                    updateTrayIcon();
+                } else if (params.state === "RTC_DISCONNECTED") {
+                    isInCall = false;
+                    currentVariant = null;
+                    VesktopNative.tray.setVoiceCallState(false);
+                    setBadge();
+                }
             }
-        }
-    });
+        })
+    );
 });

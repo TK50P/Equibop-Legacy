@@ -19,13 +19,13 @@ type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMu
 let tray: Tray;
 let trayVariant: TrayVariant = "tray";
 
-AppEvents.on("userAssetChanged", async asset => {
+const userAssetChangedListener = async (asset: string) => {
     if (tray && asset.startsWith("tray")) {
         tray.setImage(await resolveAssetPath(trayVariant as UserAssetType));
     }
-});
+};
 
-AppEvents.on("setTrayVariant", async (variant: TrayVariant) => {
+const setTrayVariantListener = async (variant: TrayVariant) => {
     if (trayVariant === variant) return;
 
     trayVariant = variant;
@@ -33,9 +33,14 @@ AppEvents.on("setTrayVariant", async (variant: TrayVariant) => {
 
     const iconPath = await resolveAssetPath(trayVariant as UserAssetType);
     tray.setImage(iconPath);
-});
+};
+
+AppEvents.on("userAssetChanged", userAssetChangedListener);
+AppEvents.on("setTrayVariant", setTrayVariantListener);
 
 export function destroyTray() {
+    AppEvents.off("userAssetChanged", userAssetChangedListener);
+    AppEvents.off("setTrayVariant", setTrayVariantListener);
     tray?.destroy();
 }
 
