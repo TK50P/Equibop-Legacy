@@ -7,9 +7,7 @@
 import { ChildProcess, spawn } from "child_process";
 import { existsSync } from "fs";
 import { join, resolve } from "path";
-import { IpcEvents } from "shared/IpcEvents";
 
-import { mainWin } from "../mainWindow";
 import { Settings } from "../settings";
 
 interface ArRPCStreamerModeMessage {

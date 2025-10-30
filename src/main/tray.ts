@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { app, BrowserWindow, Menu, Tray } from "electron";
+import { app, BrowserWindow, Menu, NativeImage, nativeImage, Tray } from "electron";
 
 import { createAboutWindow } from "./about";
 import { restartArRPC } from "./arrpc";
@@ -19,9 +19,27 @@ type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMu
 let tray: Tray;
 let trayVariant: TrayVariant = "tray";
 
+const trayImageCache = new Map<string, NativeImage>();
+
+async function getCachedTrayImage(variant: TrayVariant): Promise<NativeImage> {
+    const path = await resolveAssetPath(variant as UserAssetType);
+
+    const cached = trayImageCache.get(path);
+    if (cached) return cached;
+
+    const image = nativeImage.createFromPath(path);
+    trayImageCache.set(path, image);
+
+    return image;
+}
+
 const userAssetChangedListener = async (asset: string) => {
     if (tray && asset.startsWith("tray")) {
-        tray.setImage(await resolveAssetPath(trayVariant as UserAssetType));
+        const path = await resolveAssetPath(trayVariant as UserAssetType);
+        trayImageCache.delete(path);
+
+        const image = await getCachedTrayImage(trayVariant);
+        tray.setImage(image);
     }
 };
 
@@ -31,8 +49,8 @@ const setTrayVariantListener = async (variant: TrayVariant) => {
     trayVariant = variant;
     if (!tray) return;
 
-    const iconPath = await resolveAssetPath(trayVariant as UserAssetType);
-    tray.setImage(iconPath);
+    const image = await getCachedTrayImage(trayVariant);
+    tray.setImage(image);
 };
 
 AppEvents.on("userAssetChanged", userAssetChangedListener);
@@ -42,6 +60,8 @@ export function destroyTray() {
     AppEvents.off("userAssetChanged", userAssetChangedListener);
     AppEvents.off("setTrayVariant", setTrayVariantListener);
     tray?.destroy();
+
+    trayImageCache.clear();
 }
 
 export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean) => void) {
@@ -101,7 +121,8 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
         }
     ]);
 
-    tray = new Tray(await resolveAssetPath(trayVariant));
+    const initialImage = await getCachedTrayImage(trayVariant);
+    tray = new Tray(initialImage);
     tray.setToolTip("Equibop");
     tray.setContextMenu(trayMenu);
     tray.on("click", onTrayClick);
