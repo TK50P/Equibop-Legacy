@@ -12,9 +12,9 @@
         "build": "bun run scripts/build/build.mts",
         "build:dev": "bun run build --dev",
         "buildLibVesktop": "bun install --cwd packages/libvesktop && bun run --cwd packages/libvesktop build",
+        "compileArrpc": "bun run scripts/build/compileArrpc.mts",
         "package": "bun run build && electron-builder",
         "package:dir": "bun run build && electron-builder --dir",
-        "package:packager": "bun run build && SKIP_BUN_DOWNLOAD=true electron-builder --linux --dir && bun run scripts/build/packageForPackagers.mts",
         "lint": "eslint",
         "lint:fix": "bun lint --fix",
         "start": "bun run build && electron .",
@@ -25,8 +25,7 @@
         "watch": "bun run build --watch",
         "generateMeta": "bun run scripts/utils/generateMeta.mts",
         "updateArrpcDB": "bun ./node_modules/arrpc-bun/scripts/update_db.ts",
-        "downloadBun": "bun run scripts/build/downloadBun.mts",
-        "postinstall": "bun updateArrpcDB"
+        "postinstall": "bun updateArrpcDB && bun compileArrpc"
     },
     "dependencies": {
         "arrpc-bun": "latest",
@@ -68,18 +67,13 @@
         "appId": "org.equicord.equibop",
         "productName": "Equibop",
         "executableName": "equibop",
-        "asarUnpack": [
-            "dist/js/arrpc/**/*",
-            "node_modules/arrpc-bun/**/*"
-        ],
         "files": [
             "!*",
             "!node_modules",
             "dist/js",
             "static",
             "package.json",
-            "LICENSE",
-            "node_modules/arrpc-bun/**/*"
+            "LICENSE"
         ],
         "protocols": {
             "name": "Discord",

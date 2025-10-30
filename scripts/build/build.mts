@@ -25,7 +25,7 @@ const NodeCommonOpts: BuildOptions = {
     ...CommonOpts,
     format: "cjs",
     platform: "node",
-    external: ["electron", "original-fs", "arrpc-bun"],
+    external: ["electron", "original-fs"],
     target: ["esnext"],
     loader: {
         ".node": "file"
@@ -84,13 +84,6 @@ await Promise.all([
         entryPoints: ["src/main/index.ts"],
         outfile: "dist/js/main.js",
         footer: { js: "//# sourceURL=VesktopMain" }
-    }),
-    createContext({
-        ...NodeCommonOpts,
-        format: "esm",
-        entryPoints: ["src/main/arrpc/bunWorker.ts"],
-        outfile: "dist/js/arrpc/bunWorker.js",
-        footer: { js: "//# sourceURL=VesktopArRpcBunWorker" }
     }),
     createContext({
         ...NodeCommonOpts,

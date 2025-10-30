@@ -42,52 +42,52 @@ function debugLog(...args: any[]) {
     }
 }
 
-function getBundledBunPath(): string {
+function getArRPCBinaryPath(): string {
     const { platform } = process;
     const { arch } = process;
 
-    let bunBinary = "bun";
-    if (platform === "win32") bunBinary = "bun.exe";
+    const platformName = platform === "win32" ? "windows" : platform;
+    let binaryName = `arrpc-${platformName}-${arch}`;
+    if (platform === "win32") binaryName += ".exe";
 
-    const bunPlatform = platform === "win32" ? "windows" : platform;
-    const bunArch = arch === "arm64" ? "aarch64" : arch;
-
-    debugLog(`Looking for bun binary for platform=${platform}, arch=${arch}`);
+    debugLog(`Looking for arRPC binary for platform=${platform}, arch=${arch}`);
 
     if (process.resourcesPath) {
-        const bunPath = join(
-            process.resourcesPath,
-            "bun",
-            `${platform}-${arch}`,
-            `bun-${bunPlatform}-${bunArch}`,
-            bunBinary
-        );
-        debugLog(`Checking packaged bun path: ${bunPath}`);
+        const binaryPath = join(process.resourcesPath, "arrpc", binaryName);
+        debugLog(`Checking packaged arRPC binary path: ${binaryPath}`);
 
-        if (existsSync(bunPath)) {
-            debugLog(`Found bundled bun at: ${bunPath}`);
-            return bunPath;
+        if (existsSync(binaryPath)) {
+            debugLog(`Found arRPC binary at: ${binaryPath}`);
+            return binaryPath;
         }
     }
 
-    debugLog("No bundled bun found");
-    return "bun";
+    debugLog("No bundled arRPC binary found, falling back to development path");
+    // dev __dirname is dist/js, so we need to go up 2 levels
+    const devPath = resolve(__dirname, "..", "..", "resources", "arrpc", binaryName);
+    debugLog(`Checking dev path: ${devPath}`);
+    if (existsSync(devPath)) {
+        debugLog(`Found arRPC binary at dev path: ${devPath}`);
+        return devPath;
+    }
+
+    throw new Error(`arRPC binary not found for ${platformName}-${arch} at ${devPath}`);
 }
 
-let bunProcess: ChildProcess;
+let arrpcProcess: ChildProcess;
 let lastError: string | null = null;
 let lastExitCode: number | null = null;
 let serverPort: number | null = null;
 let serverHost: string | null = null;
 let startTime: number | null = null;
 let restartCount: number = 0;
-let bunPath: string | null = null;
+let binaryPath: string | null = null;
 let warnings: string[] = [];
 
 export function getArRPCStatus() {
     return {
-        running: bunProcess?.pid != null,
-        pid: bunProcess?.pid ?? null,
+        running: arrpcProcess?.pid != null,
+        pid: arrpcProcess?.pid ?? null,
         port: serverPort,
         host: serverHost,
         enabled: Settings.store.arRPC ?? false,
@@ -95,24 +95,24 @@ export function getArRPCStatus() {
         lastExitCode,
         uptime: startTime ? Date.now() - startTime : null,
         restartCount,
-        bunPath,
+        binaryPath,
         warnings: [...warnings]
     };
 }
 
 export function destroyArRPC() {
-    if (!bunProcess) return;
+    if (!arrpcProcess) return;
 
     debugLog("Destroying arRPC process");
 
-    bunProcess.removeAllListeners("message");
-    bunProcess.removeAllListeners("error");
-    bunProcess.removeAllListeners("exit");
-    bunProcess.stdout?.removeAllListeners("data");
-    bunProcess.stderr?.removeAllListeners("data");
+    arrpcProcess.removeAllListeners("message");
+    arrpcProcess.removeAllListeners("error");
+    arrpcProcess.removeAllListeners("exit");
+    arrpcProcess.stdout?.removeAllListeners("data");
+    arrpcProcess.stderr?.removeAllListeners("data");
 
-    bunProcess.kill();
-    bunProcess = null as any;
+    arrpcProcess.kill();
+    arrpcProcess = null as any;
     serverPort = null;
     serverHost = null;
     startTime = null;
@@ -133,7 +133,7 @@ export async function initArRPC() {
         return;
     }
 
-    if (bunProcess) {
+    if (arrpcProcess) {
         debugLog("arRPC process already running");
         return;
     }
@@ -143,69 +143,87 @@ export async function initArRPC() {
     lastExitCode = null;
 
     try {
-        // check for unpacked version first (for production builds)
-        const workerDir = resolve(__dirname, "..").replace("app.asar", "app.asar.unpacked");
-        const workerPath = join(workerDir, "js", "arrpc", "bunWorker.js");
-        const resolvedBunPath = getBundledBunPath();
+        const resolvedBinaryPath = getArRPCBinaryPath();
 
-        debugLog("Initializing arRPC");
-        debugLog(`Worker path: ${workerPath}`);
-        debugLog(`Worker directory: ${workerDir}`);
-        debugLog(`Bun path: ${resolvedBunPath}`);
-        debugLog(`Spawn args: [${workerPath}]`);
+        let dataDir: string;
 
-        if (resolvedBunPath === "bun") {
-            warnings.push("Using system bun (bundled bun not found)");
+        const binaryDir = resolve(resolvedBinaryPath, "..");
+
+        if (existsSync(join(binaryDir, "detectable.json"))) {
+            dataDir = binaryDir;
+        } else if (process.resourcesPath) {
+            const prodDataDir = join(process.resourcesPath, "arrpc");
+            if (existsSync(prodDataDir) && existsSync(join(prodDataDir, "detectable.json"))) {
+                dataDir = prodDataDir;
+            } else {
+                dataDir = resolve(__dirname, "..", "..", "resources", "arrpc");
+            }
+        } else {
+            dataDir = resolve(__dirname, "..", "..", "resources", "arrpc");
         }
 
-        bunProcess = spawn(resolvedBunPath, [workerPath], {
-            stdio: ["ignore", "pipe", "pipe", "ipc"],
-            cwd: workerDir,
-            env: process.env,
+        debugLog("Initializing arRPC");
+        debugLog(`Binary path: ${resolvedBinaryPath}`);
+        debugLog(`Data directory: ${dataDir}`);
+
+        if (!existsSync(dataDir)) {
+            throw new Error(`Data directory does not exist: ${dataDir}`);
+        }
+
+        if (!existsSync(join(dataDir, "detectable.json"))) {
+            throw new Error(`detectable.json not found in data directory: ${dataDir}`);
+        }
+
+        binaryPath = resolvedBinaryPath;
+
+        const env = {
+            ...process.env,
+            ARRPC_DATA_DIR: dataDir
+        };
+
+        arrpcProcess = spawn(resolvedBinaryPath, [], {
+            stdio: ["ignore", "pipe", "pipe"],
+            cwd: dataDir,
+            env,
             windowsHide: true
         });
 
-        debugLog(`arRPC process spawned with PID: ${bunProcess.pid}`);
+        debugLog(`arRPC process spawned with PID: ${arrpcProcess.pid}`);
 
-        bunPath = resolvedBunPath;
         startTime = Date.now();
 
-        bunProcess.on("message", message => {
-            debugLog("Received IPC message from bunWorker:", message);
-            if (isArRPCMessage(message)) {
-                if (message.type === "SERVER_INFO") {
-                    serverPort = message.data.port;
-                    serverHost = message.data.host;
-                    debugLog(`arRPC server listening on ${serverHost}:${serverPort}`);
-                } else if (message.type === "STREAMERMODE") {
-                    debugLog("Message is STREAMERMODE, sending to renderer");
-                    mainWin?.webContents.send(IpcEvents.STREAMER_MODE_DETECTED, message.data);
-                }
+        arrpcProcess.stdout?.on("data", data => {
+            const output = data.toString().trim();
+            console.log("[arRPC]", output);
+
+            const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, "");
+
+            const bridgeMatch = cleanOutput.match(/\[arRPC > bridge\] listening on (\d+)/);
+            if (bridgeMatch) {
+                serverPort = parseInt(bridgeMatch[1], 10);
+                serverHost = "127.0.0.1";
+                debugLog(`Parsed arRPC server info: ${serverHost}:${serverPort}`);
             }
         });
 
-        bunProcess.stdout?.on("data", data => {
-            console.log(data.toString().trim());
-        });
-
-        bunProcess.stderr?.on("data", data => {
+        arrpcProcess.stderr?.on("data", data => {
             const errorMsg = data.toString().trim();
             console.error("[arRPC ! stderr]", errorMsg);
             lastError = errorMsg;
         });
 
-        bunProcess.on("error", err => {
+        arrpcProcess.on("error", err => {
             console.error("[arRPC] Failed to start:", err);
             lastError = err.message;
         });
 
-        bunProcess.on("exit", code => {
+        arrpcProcess.on("exit", code => {
             lastExitCode = code;
             if (code !== 0 && code !== null) {
                 console.error(`[arRPC] Process exited with code ${code}`);
             }
             debugLog(`arRPC process exited with code ${code}`);
-            bunProcess = null as any;
+            arrpcProcess = null as any;
             startTime = null;
         });
     } catch (e) {
