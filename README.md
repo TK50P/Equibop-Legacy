@@ -79,7 +79,7 @@ Inside this folder, you **must** include the files:
 
 Place the `electron.js` in `scripts` folder.
 
-Now open `package.json`. Replace `pnpm build && electron .` with `node scripts/electron.js .`. <br>
+Now open `package.json`. Replace `bun run build && electron .` with `node scripts/electron.js .`. <br>
 In `"devDependencies"` section, replace `"electron"`'s version (e.g. `"^37.2.2"` with `"file:./local_electron"`). 
 
 Now, go to `"build"` section and add this line.
@@ -232,7 +232,7 @@ cd Equibop
 bun install
 
 # Downgrade Electron to v32 (last version supported on Catalina, based on Chromium 128)
-pnpm install -f electron@32
+bun install -f electron@32
 
 # Package the app
 bun package
