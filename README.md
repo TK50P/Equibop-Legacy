@@ -58,7 +58,7 @@ You need to have the following dependencies installed:
 
 - [Git](https://git-scm.com/downloads)
 - [Bun](https://bun.sh)
-- bun: `npm install --global bun`
+- bun: `powershell -c "irm bun.sh/install.ps1|iex"`
 
 Packaging will create builds in the dist/ folder
 
