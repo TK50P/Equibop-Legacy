@@ -53,9 +53,12 @@ These work on macOS Catalina 10.15
 
 You need to have the following dependencies installed:
 
+> [!NOTE]
+> Since version 3.0.0, they changed `pnpm` to `bun`.
+
 - [Git](https://git-scm.com/downloads)
-- [Node.js](https://nodejs.org/en/download)
-- pnpm: `npm install --global pnpm`
+- [Bun](https://bun.sh)
+- bun: `npm install --global bun`
 
 Packaging will create builds in the dist/ folder
 
@@ -84,6 +87,8 @@ Now, go to `"build"` section and add this line.
 "electronDist": "./local_electron/electron-v37.2.2-win32-x64",
 "electronVersion": "37.2.2",
 ```
+> [!NOTE]
+> You must change `x64` to `ia32` if you are targetting to 32Bit.
 
 For Example, if code is like this,
 ```js
@@ -154,16 +159,16 @@ git clone https://github.com/Equicord/Equibop
 cd Equibop
 
 # Install Dependencies
-pnpm i
+bun install
 
 # Compile TypeScript files
-pnpm build
+bun run build
 
-# Now, start the program
-pnpm start
+# Either run it without packaging
+bun start
 
-# Or package it for Windows
-pnpm package
+# Or package (will build packages for your OS)
+bun package
 ```
 
 ## For macOS Catalina (10.15)  
@@ -223,12 +228,12 @@ Now, simply downgrade the Electron version as follows:
 git clone https://github.com/Equicord/Equibop
 cd Equibop
 
-# Install dependencies
-pnpm i
+# Install Dependencies
+bun install
 
 # Downgrade Electron to v32 (last version supported on Catalina, based on Chromium 128)
-pnpm i -f electron@32
+pnpm install -f electron@32
 
 # Package the app
-pnpm package
+bun package
 ```
