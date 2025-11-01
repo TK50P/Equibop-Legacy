@@ -59,11 +59,24 @@ if (!existsSync(ARRPC_ENTRY)) {
 
 mkdirSync(OUTPUT_DIR, { recursive: true });
 
-console.log("Compiling arRPC binaries for all platforms...");
+const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+const currentPlatform = process.platform === "win32" ? "windows" : process.platform;
+
+let targetsToCompile = TARGETS;
+if (isCI) {
+	targetsToCompile = TARGETS.filter(t => t.platform === currentPlatform);
+	console.log(`Running in CI on ${currentPlatform}, compiling only for current platform...`);
+} else {
+	console.log("Compiling arRPC binaries for all platforms...");
+}
+
 console.log(`Source: ${ARRPC_ENTRY}`);
 console.log(`Output: ${OUTPUT_DIR}\n`);
 
-for (const target of TARGETS) {
+const compiledTargets: string[] = [];
+const failedTargets: string[] = [];
+
+for (const target of targetsToCompile) {
 	const outputPath = join(OUTPUT_DIR, target.output);
 
 	console.log(`Compiling ${target.platform}-${target.arch}...`);
@@ -78,11 +91,30 @@ for (const target of TARGETS) {
 		});
 
 		console.log(`Compiled ${target.output}\n`);
+		compiledTargets.push(target.output);
 	} catch (err) {
 		console.error(`Failed to compile ${target.output}`);
 		console.error(err);
-		process.exit(1);
+		failedTargets.push(target.output);
+
+		if (isCI) {
+			console.error(`Compilation failed in CI for ${target.output}`);
+			process.exit(1);
+		} else {
+			console.warn(`Skipping ${target.output}, continuing with other targets...\n`);
+		}
 	}
+}
+
+if (compiledTargets.length === 0) {
+	console.error("No binaries were compiled successfully!");
+	process.exit(1);
+}
+
+if (failedTargets.length > 0 && !isCI) {
+	console.warn(`\nWarning: ${failedTargets.length} target(s) failed to compile:`);
+	failedTargets.forEach(t => console.warn(`  - ${t}`));
+	console.warn("Continuing with successfully compiled binaries...\n");
 }
 
 console.log("Copying detectable database files...");
@@ -112,4 +144,4 @@ if (existsSync(detectableFixesJson)) {
 	console.log("Copied detectable_fixes.json");
 }
 
-console.log("\nAll arRPC binaries compiled successfully!");
+console.log(`\n Successfully compiled ${compiledTargets.length} arRPC ${compiledTargets.length === 1 ? "binary" : "binaries"}!`);
