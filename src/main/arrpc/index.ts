@@ -32,14 +32,21 @@ interface ArRPCReadyMessage {
     };
 }
 
-type ArRPCMessage = ArRPCStreamerModeMessage | ArRPCServerInfoMessage | ArRPCReadyMessage;
+interface ArRPCHeartbeatMessage {
+    type: "HEARTBEAT";
+    data: {
+        timestamp: number;
+    };
+}
+
+type ArRPCMessage = ArRPCStreamerModeMessage | ArRPCServerInfoMessage | ArRPCReadyMessage | ArRPCHeartbeatMessage;
 
 function isArRPCMessage(message: unknown): message is ArRPCMessage {
     return (
         typeof message === "object" &&
         message !== null &&
         "type" in message &&
-        (message.type === "STREAMERMODE" || message.type === "SERVER_INFO" || message.type === "READY")
+        (message.type === "STREAMERMODE" || message.type === "SERVER_INFO" || message.type === "READY" || message.type === "HEARTBEAT")
     );
 }
 
@@ -186,7 +193,8 @@ export async function initArRPC() {
         const env = {
             ...process.env,
             ARRPC_DATA_DIR: dataDir,
-            ARRPC_IPC_MODE: "1"
+            ARRPC_IPC_MODE: "1",
+            ARRPC_PARENT_MONITOR: "1"
         };
 
         arrpcProcess = spawn(resolvedBinaryPath, [], {
