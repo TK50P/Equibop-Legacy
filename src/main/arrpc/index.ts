@@ -123,7 +123,8 @@ function getArRPCBinaryPath(): string {
         }
     }
 
-    debugLog("No bundled arRPC binary found, falling back to development path");
+    debugLog("No bundled arRPC binary found, trying alternative paths");
+
     const devPath = resolve(__dirname, "..", "..", "resources", "arrpc", binaryName);
     debugLog(`Checking dev path: ${devPath}`);
     if (checkBinary(devPath)) {
@@ -131,7 +132,14 @@ function getArRPCBinaryPath(): string {
         return devPath;
     }
 
-    throw new Error(`arRPC binary not found for ${platformName}-${arch} at ${devPath}`);
+    const asarPath = resolve(__dirname.replace(/app\.asar.*$/, ""), "arrpc", binaryName);
+    debugLog(`Checking asar-relative path: ${asarPath}`);
+    if (checkBinary(asarPath)) {
+        debugLog(`Found arRPC binary at asar-relative path: ${asarPath}`);
+        return asarPath;
+    }
+
+    throw new Error(`arRPC binary not found for ${platformName}-${arch}. Tried: ${devPath}, ${asarPath}`);
 }
 
 let arrpcProcess: ChildProcess | null = null;
