@@ -90,9 +90,11 @@ export const VesktopNative = {
                 lastError: string | null;
                 lastExitCode: number | null;
                 uptime: number | null;
+                readyTime: number | null;
                 restartCount: number;
-                bunPath: string | null;
-                warnings: string[];
+                binaryPath: string | null;
+                isReady: boolean;
+                lastHeartbeat: number | null;
             }>(IpcEvents.ARRPC_GET_STATUS)
     },
     win: {

@@ -145,7 +145,7 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
         {
             key: "arRPC",
             title: "Rich Presence",
-            description: "Enables Rich Presence via arRPC",
+            description: "Enables Rich Presence via arRPC-bun",
             defaultValue: false
         },
         {

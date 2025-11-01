@@ -24,7 +24,7 @@ import { once } from "shared/utils/once";
 import type { SettingsStore } from "shared/utils/SettingsStore";
 
 import { createAboutWindow } from "./about";
-import { destroyArRPC, initArRPC } from "./arrpc";
+import { cleanupArRPC, initArRPC, setupArRPC } from "./arrpc";
 import { CommandLine } from "./cli";
 import { BrowserUserAgent, DEFAULT_HEIGHT, DEFAULT_WIDTH, isLinux, MIN_HEIGHT, MIN_WIDTH } from "./constants";
 import { AppEvents } from "./events";
@@ -44,9 +44,9 @@ let isQuitting = false;
 
 applyDeckKeyboardFix();
 
-app.on("before-quit", () => {
+app.on("before-quit", async () => {
     isQuitting = true;
-    destroyArRPC();
+    await cleanupArRPC();
 });
 
 export let mainWin: BrowserWindow;
@@ -500,6 +500,7 @@ export async function createWindows() {
         }
     });
 
+    setupArRPC();
     initArRPC();
     if (isLinux) initKeybinds();
 }

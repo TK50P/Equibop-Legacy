@@ -5,7 +5,7 @@
  */
 
 import { ChildProcess, spawn } from "child_process";
-import { existsSync } from "fs";
+import { accessSync, constants, existsSync, statSync } from "fs";
 import { join, resolve } from "path";
 
 import { Settings } from "../settings";
@@ -46,7 +46,10 @@ function isArRPCMessage(message: unknown): message is ArRPCMessage {
         typeof message === "object" &&
         message !== null &&
         "type" in message &&
-        (message.type === "STREAMERMODE" || message.type === "SERVER_INFO" || message.type === "READY" || message.type === "HEARTBEAT")
+        (message.type === "STREAMERMODE" ||
+            message.type === "SERVER_INFO" ||
+            message.type === "READY" ||
+            message.type === "HEARTBEAT")
     );
 }
 
@@ -56,7 +59,30 @@ function debugLog(...args: any[]) {
     }
 }
 
+const SUPPORTED_PLATFORMS = new Map([
+    ["linux", ["x64", "arm64"]],
+    ["darwin", ["x64", "arm64"]],
+    ["win32", ["x64"]]
+]);
+
+function validatePlatform(): void {
+    const { platform, arch } = process;
+    const supportedArchs = SUPPORTED_PLATFORMS.get(platform);
+
+    if (!supportedArchs) {
+        throw new Error(
+            `Unsupported platform: ${platform}. arRPC only supports: ${Array.from(SUPPORTED_PLATFORMS.keys()).join(", ")}`
+        );
+    }
+
+    if (!supportedArchs.includes(arch)) {
+        throw new Error(`Unsupported architecture for ${platform}: ${arch}. Supported: ${supportedArchs.join(", ")}`);
+    }
+}
+
 function getArRPCBinaryPath(): string {
+    validatePlatform();
+
     const { platform } = process;
     const { arch } = process;
 
@@ -66,21 +92,41 @@ function getArRPCBinaryPath(): string {
 
     debugLog(`Looking for arRPC binary for platform=${platform}, arch=${arch}`);
 
+    const checkBinary = (path: string): boolean => {
+        if (!existsSync(path)) return false;
+
+        const stats = statSync(path);
+        if (!stats.isFile()) {
+            debugLog(`Path exists but is not a file: ${path}`);
+            return false;
+        }
+
+        try {
+            accessSync(path, constants.X_OK);
+            return true;
+        } catch {
+            if (platform !== "win32") {
+                debugLog(`Binary not executable: ${path}`);
+                return false;
+            }
+            return true;
+        }
+    };
+
     if (process.resourcesPath) {
         const binaryPath = join(process.resourcesPath, "arrpc", binaryName);
         debugLog(`Checking packaged arRPC binary path: ${binaryPath}`);
 
-        if (existsSync(binaryPath)) {
+        if (checkBinary(binaryPath)) {
             debugLog(`Found arRPC binary at: ${binaryPath}`);
             return binaryPath;
         }
     }
 
     debugLog("No bundled arRPC binary found, falling back to development path");
-    // dev __dirname is dist/js, so we need to go up 2 levels
     const devPath = resolve(__dirname, "..", "..", "resources", "arrpc", binaryName);
     debugLog(`Checking dev path: ${devPath}`);
-    if (existsSync(devPath)) {
+    if (checkBinary(devPath)) {
         debugLog(`Found arRPC binary at dev path: ${devPath}`);
         return devPath;
     }
@@ -88,62 +134,202 @@ function getArRPCBinaryPath(): string {
     throw new Error(`arRPC binary not found for ${platformName}-${arch} at ${devPath}`);
 }
 
-let arrpcProcess: ChildProcess;
+let arrpcProcess: ChildProcess | null = null;
 let lastError: string | null = null;
 let lastExitCode: number | null = null;
 let serverPort: number | null = null;
 let serverHost: string | null = null;
 let startTime: number | null = null;
+let readyTime: number | null = null;
 let restartCount: number = 0;
 let binaryPath: string | null = null;
-let warnings: string[] = [];
+let isReady: boolean = false;
+let settingsListener: (() => void) | null = null;
+let stderrBuffer: string = "";
+let initTimeout: NodeJS.Timeout | null = null;
+let isDestroying: boolean = false;
+let lastHeartbeat: number | null = null;
+
+const INIT_TIMEOUT_MS = 10000;
+const PROCESS_KILL_TIMEOUT_MS = 5000;
 
 export function getArRPCStatus() {
+    const proc = arrpcProcess;
+    const pid = proc?.pid ?? null;
+    const running = proc != null && !proc.killed && pid != null;
+
     return {
-        running: arrpcProcess?.pid != null,
-        pid: arrpcProcess?.pid ?? null,
+        running,
+        pid,
         port: serverPort,
         host: serverHost,
         enabled: Settings.store.arRPC ?? false,
         lastError,
         lastExitCode,
         uptime: startTime ? Date.now() - startTime : null,
+        readyTime: readyTime ? Date.now() - readyTime : null,
         restartCount,
         binaryPath,
-        warnings: [...warnings]
+        isReady,
+        lastHeartbeat: lastHeartbeat ? Date.now() - lastHeartbeat : null
     };
 }
 
-export function destroyArRPC() {
-    if (!arrpcProcess) return;
+function clearInitTimeout() {
+    if (initTimeout) {
+        clearTimeout(initTimeout);
+        initTimeout = null;
+    }
+}
 
+export async function destroyArRPC(): Promise<void> {
+    if (!arrpcProcess || isDestroying) return;
+
+    isDestroying = true;
     debugLog("Destroying arRPC process");
 
-    arrpcProcess.removeAllListeners("message");
-    arrpcProcess.removeAllListeners("error");
-    arrpcProcess.removeAllListeners("exit");
-    arrpcProcess.stdout?.removeAllListeners("data");
-    arrpcProcess.stderr?.removeAllListeners("data");
+    clearInitTimeout();
 
-    arrpcProcess.kill();
-    arrpcProcess = null as any;
+    const proc = arrpcProcess;
+    arrpcProcess = null;
     serverPort = null;
     serverHost = null;
     startTime = null;
+    readyTime = null;
+    isReady = false;
+    stderrBuffer = "";
+    lastHeartbeat = null;
+
+    if (proc) {
+        proc.removeAllListeners();
+        proc.stdout?.removeAllListeners();
+        proc.stderr?.removeAllListeners();
+
+        if (!proc.killed) {
+            const killPromise = new Promise<void>(resolve => {
+                const timeout = setTimeout(() => {
+                    if (!proc.killed) {
+                        debugLog("Process did not exit gracefully, force killing");
+                        proc.kill("SIGKILL");
+                    }
+                    resolve();
+                }, PROCESS_KILL_TIMEOUT_MS);
+
+                proc.once("exit", () => {
+                    clearTimeout(timeout);
+                    resolve();
+                });
+
+                proc.kill("SIGTERM");
+            });
+
+            await killPromise;
+        }
+    }
+
+    isDestroying = false;
+    debugLog("arRPC process destroyed");
 }
 
 export async function restartArRPC() {
     debugLog("Restarting arRPC");
-    restartCount++;
-    destroyArRPC();
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await destroyArRPC();
     await initArRPC();
+    if (arrpcProcess) {
+        restartCount++;
+    }
+}
+
+function validateServerInfo(data: ArRPCServerInfoMessage["data"]): boolean {
+    if (data.port !== undefined) {
+        if (typeof data.port !== "number" || data.port < 1 || data.port > 65535) {
+            debugLog(`Invalid port in SERVER_INFO: ${data.port}`);
+            return false;
+        }
+    }
+
+    if (data.host !== undefined) {
+        if (typeof data.host !== "string" || data.host.length === 0) {
+            debugLog(`Invalid host in SERVER_INFO: ${data.host}`);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function handleArRPCMessage(message: ArRPCMessage) {
+    switch (message.type) {
+        case "SERVER_INFO": {
+            if (!validateServerInfo(message.data)) {
+                lastError = "Received invalid SERVER_INFO data";
+                return;
+            }
+
+            const { port, host, socketPath, service } = message.data;
+            if (port && host && service === "bridge") {
+                serverPort = port;
+                serverHost = host;
+                debugLog(`Received arRPC server info [${service}]: ${host}:${port}`);
+            } else if (socketPath) {
+                debugLog(`Received arRPC server info [${service}]: ${socketPath}`);
+            } else if (port && host) {
+                debugLog(`Received arRPC server info [${service}]: ${host}:${port}`);
+            }
+            break;
+        }
+
+        case "READY": {
+            isReady = true;
+            readyTime = Date.now();
+            clearInitTimeout();
+            debugLog(`arRPC ready, version: ${message.data.version}`);
+            break;
+        }
+
+        case "HEARTBEAT": {
+            lastHeartbeat = message.data.timestamp;
+            debugLog(`Received heartbeat: ${message.data.timestamp}`);
+            break;
+        }
+
+        case "STREAMERMODE": {
+            debugLog(`Streamer mode changed: ${message.data}`);
+            break;
+        }
+    }
+}
+
+function processStderrData(data: string) {
+    stderrBuffer += data;
+
+    const lines = stderrBuffer.split("\n");
+    stderrBuffer = lines.pop() || "";
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        try {
+            const message = JSON.parse(trimmed);
+            if (isArRPCMessage(message)) {
+                handleArRPCMessage(message);
+                continue;
+            }
+        } catch (e) {
+            debugLog(`Failed to parse stderr line as JSON: ${e instanceof Error ? e.message : String(e)}`);
+        }
+
+        console.error("[arRPC ! stderr]", trimmed);
+        lastError = trimmed;
+    }
 }
 
 export async function initArRPC() {
     if (!Settings.store.arRPC) {
         debugLog("arRPC is disabled in settings, destroying if running");
-        destroyArRPC();
+        await destroyArRPC();
+        restartCount = 0;
         return;
     }
 
@@ -152,22 +338,23 @@ export async function initArRPC() {
         return;
     }
 
-    warnings = [];
     lastError = null;
     lastExitCode = null;
+    isReady = false;
+    stderrBuffer = "";
 
     try {
         const resolvedBinaryPath = getArRPCBinaryPath();
 
         let dataDir: string;
-
         const binaryDir = resolve(resolvedBinaryPath, "..");
+        const detectableFile = "detectable.json";
 
-        if (existsSync(join(binaryDir, "detectable.json"))) {
+        if (existsSync(join(binaryDir, detectableFile))) {
             dataDir = binaryDir;
         } else if (process.resourcesPath) {
             const prodDataDir = join(process.resourcesPath, "arrpc");
-            if (existsSync(prodDataDir) && existsSync(join(prodDataDir, "detectable.json"))) {
+            if (existsSync(join(prodDataDir, detectableFile))) {
                 dataDir = prodDataDir;
             } else {
                 dataDir = resolve(__dirname, "..", "..", "resources", "arrpc");
@@ -184,8 +371,9 @@ export async function initArRPC() {
             throw new Error(`Data directory does not exist: ${dataDir}`);
         }
 
-        if (!existsSync(join(dataDir, "detectable.json"))) {
-            throw new Error(`detectable.json not found in data directory: ${dataDir}`);
+        const detectablePath = join(dataDir, detectableFile);
+        if (!existsSync(detectablePath)) {
+            throw new Error(`${detectableFile} not found in data directory: ${dataDir}`);
         }
 
         binaryPath = resolvedBinaryPath;
@@ -205,8 +393,16 @@ export async function initArRPC() {
         });
 
         debugLog(`arRPC process spawned with PID: ${arrpcProcess.pid}`);
-
         startTime = Date.now();
+
+        initTimeout = setTimeout(() => {
+            if (!isReady && arrpcProcess) {
+                const error = "arRPC failed to send READY message within timeout";
+                console.error(`[arRPC] ${error}`);
+                lastError = error;
+                destroyArRPC();
+            }
+        }, INIT_TIMEOUT_MS);
 
         arrpcProcess.stdout?.on("data", data => {
             const output = data.toString().trim();
@@ -214,56 +410,64 @@ export async function initArRPC() {
         });
 
         arrpcProcess.stderr?.on("data", data => {
-            const output = data.toString().trim();
-
-            const lines = output.split("\n");
-            for (const line of lines) {
-                if (!line.trim()) continue;
-
-                try {
-                    const message = JSON.parse(line);
-                    if (isArRPCMessage(message)) {
-                        if (message.type === "SERVER_INFO") {
-                            const { port, host, socketPath, service } = message.data;
-                            if (port && host && service === "bridge") {
-                                serverPort = port;
-                                serverHost = host;
-                                debugLog(`Received arRPC server info [${service}]: ${host}:${port}`);
-                            } else if (socketPath) {
-                                debugLog(`Received arRPC server info [${service}]: ${socketPath}`);
-                            } else if (port && host) {
-                                debugLog(`Received arRPC server info [${service}]: ${host}:${port}`);
-                            }
-                        } else if (message.type === "READY") {
-                            debugLog(`arRPC ready, version: ${message.data.version}`);
-                        }
-                        continue;
-                    }
-                } catch {}
-
-                console.error("[arRPC ! stderr]", line);
-                lastError = line;
-            }
+            processStderrData(data.toString());
         });
 
         arrpcProcess.on("error", err => {
-            console.error("[arRPC] Failed to start:", err);
+            console.error("[arRPC] Process error:", err);
             lastError = err.message;
+            clearInitTimeout();
         });
 
-        arrpcProcess.on("exit", code => {
+        arrpcProcess.on("exit", (code, signal) => {
             lastExitCode = code;
+            const wasReady = isReady;
+
             if (code !== 0 && code !== null) {
-                console.error(`[arRPC] Process exited with code ${code}`);
+                console.error(`[arRPC] Process exited with code ${code}, signal ${signal}`);
+                lastError = `Process exited with code ${code}`;
             }
-            debugLog(`arRPC process exited with code ${code}`);
-            arrpcProcess = null as any;
+
+            debugLog(`arRPC process exited with code ${code}, signal ${signal}, wasReady: ${wasReady}`);
+
+            arrpcProcess = null;
+            serverPort = null;
+            serverHost = null;
             startTime = null;
+            readyTime = null;
+            isReady = false;
+            stderrBuffer = "";
+            lastHeartbeat = null;
+
+            clearInitTimeout();
         });
     } catch (e) {
-        console.error("Failed to start arRPC server", e);
+        console.error("[arRPC] Failed to start arRPC server:", e);
         lastError = e instanceof Error ? e.message : String(e);
+        clearInitTimeout();
     }
 }
 
-Settings.addChangeListener("arRPC", initArRPC);
+export function setupArRPC() {
+    if (settingsListener) {
+        debugLog("arRPC already set up");
+        return;
+    }
+
+    settingsListener = () => {
+        initArRPC();
+    };
+
+    Settings.addChangeListener("arRPC", settingsListener);
+    debugLog("arRPC settings listener registered");
+}
+
+export async function cleanupArRPC() {
+    if (settingsListener) {
+        Settings.removeChangeListener("arRPC", settingsListener);
+        settingsListener = null;
+        debugLog("arRPC settings listener removed");
+    }
+
+    await destroyArRPC();
+}
