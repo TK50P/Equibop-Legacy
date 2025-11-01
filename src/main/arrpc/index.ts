@@ -18,19 +18,28 @@ interface ArRPCStreamerModeMessage {
 interface ArRPCServerInfoMessage {
     type: "SERVER_INFO";
     data: {
-        port: number;
-        host: string;
+        port?: number;
+        host?: string;
+        socketPath?: string;
+        service?: string;
     };
 }
 
-type ArRPCMessage = ArRPCStreamerModeMessage | ArRPCServerInfoMessage;
+interface ArRPCReadyMessage {
+    type: "READY";
+    data: {
+        version: string;
+    };
+}
+
+type ArRPCMessage = ArRPCStreamerModeMessage | ArRPCServerInfoMessage | ArRPCReadyMessage;
 
 function isArRPCMessage(message: unknown): message is ArRPCMessage {
     return (
         typeof message === "object" &&
         message !== null &&
         "type" in message &&
-        (message.type === "STREAMERMODE" || message.type === "SERVER_INFO")
+        (message.type === "STREAMERMODE" || message.type === "SERVER_INFO" || message.type === "READY")
     );
 }
 
@@ -176,7 +185,8 @@ export async function initArRPC() {
 
         const env = {
             ...process.env,
-            ARRPC_DATA_DIR: dataDir
+            ARRPC_DATA_DIR: dataDir,
+            ARRPC_IPC_MODE: "1"
         };
 
         arrpcProcess = spawn(resolvedBinaryPath, [], {
@@ -193,21 +203,39 @@ export async function initArRPC() {
         arrpcProcess.stdout?.on("data", data => {
             const output = data.toString().trim();
             console.log("[arRPC]", output);
-
-            const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, "");
-
-            const bridgeMatch = cleanOutput.match(/\[arRPC > bridge\] listening on (\d+)/);
-            if (bridgeMatch) {
-                serverPort = parseInt(bridgeMatch[1], 10);
-                serverHost = "127.0.0.1";
-                debugLog(`Parsed arRPC server info: ${serverHost}:${serverPort}`);
-            }
         });
 
         arrpcProcess.stderr?.on("data", data => {
-            const errorMsg = data.toString().trim();
-            console.error("[arRPC ! stderr]", errorMsg);
-            lastError = errorMsg;
+            const output = data.toString().trim();
+
+            const lines = output.split("\n");
+            for (const line of lines) {
+                if (!line.trim()) continue;
+
+                try {
+                    const message = JSON.parse(line);
+                    if (isArRPCMessage(message)) {
+                        if (message.type === "SERVER_INFO") {
+                            const { port, host, socketPath, service } = message.data;
+                            if (port && host && service === "bridge") {
+                                serverPort = port;
+                                serverHost = host;
+                                debugLog(`Received arRPC server info [${service}]: ${host}:${port}`);
+                            } else if (socketPath) {
+                                debugLog(`Received arRPC server info [${service}]: ${socketPath}`);
+                            } else if (port && host) {
+                                debugLog(`Received arRPC server info [${service}]: ${host}:${port}`);
+                            }
+                        } else if (message.type === "READY") {
+                            debugLog(`arRPC ready, version: ${message.data.version}`);
+                        }
+                        continue;
+                    }
+                } catch {}
+
+                console.error("[arRPC ! stderr]", line);
+                lastError = line;
+            }
         });
 
         arrpcProcess.on("error", err => {
