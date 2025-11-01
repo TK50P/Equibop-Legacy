@@ -414,7 +414,7 @@ export async function initArRPC() {
 
         arrpcProcess.stdout?.on("data", data => {
             const output = data.toString().trim();
-            console.log("[arRPC]", output);
+            console.log(output);
         });
 
         arrpcProcess.stderr?.on("data", data => {
