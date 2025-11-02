@@ -31,6 +31,7 @@ Ported for Windows NT 6.x and macOS Catalina.
 **Not fully Supported**:
 <!-- not supported on windows yet lol -->
 - Global Keybinds
+- arRPC (since 3.0.9 they changed to [arRPC-bun](https://github.com/Creationsss/arrpc-bun), therefore cannot be ported to Windows NT 6.x.)
 
 ## Installing
 
