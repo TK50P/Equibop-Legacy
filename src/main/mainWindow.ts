@@ -24,6 +24,7 @@ import { once } from "shared/utils/once";
 import type { SettingsStore } from "shared/utils/SettingsStore";
 
 import { createAboutWindow } from "./about";
+import { destroyAppBadge } from "./appBadge";
 import { cleanupArRPC, initArRPC, setupArRPC } from "./arrpc";
 import { CommandLine } from "./cli";
 import { BrowserUserAgent, DEFAULT_HEIGHT, DEFAULT_WIDTH, isLinux, MIN_HEIGHT, MIN_WIDTH } from "./constants";
@@ -46,6 +47,8 @@ applyDeckKeyboardFix();
 
 app.on("before-quit", async () => {
     isQuitting = true;
+    destroyTray();
+    destroyAppBadge();
     await cleanupArRPC();
 });
 

@@ -19,6 +19,8 @@ type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMu
 let tray: Tray;
 let trayVariant: TrayVariant = "tray";
 let onTrayClick: (() => void) | null = null;
+let trayUpdateTimeout: NodeJS.Timeout | null = null;
+let pendingTrayVariant: TrayVariant | null = null;
 
 const trayImageCache = new Map<string, NativeImage>();
 
@@ -44,14 +46,29 @@ const userAssetChangedListener = async (asset: string) => {
     }
 };
 
-const setTrayVariantListener = async (variant: TrayVariant) => {
-    if (trayVariant === variant) return;
+async function updateTrayIcon(variant: TrayVariant) {
+    if (!tray || trayVariant === variant) return;
 
     trayVariant = variant;
-    if (!tray) return;
-
     const image = await getCachedTrayImage(trayVariant);
     tray.setImage(image);
+}
+
+const setTrayVariantListener = (variant: TrayVariant) => {
+    pendingTrayVariant = variant;
+
+    if (trayUpdateTimeout) return;
+
+    updateTrayIcon(variant);
+
+    trayUpdateTimeout = setTimeout(() => {
+        trayUpdateTimeout = null;
+
+        if (pendingTrayVariant && pendingTrayVariant !== trayVariant) {
+            updateTrayIcon(pendingTrayVariant);
+        }
+        pendingTrayVariant = null;
+    }, 100);
 };
 
 if (!AppEvents.listeners("userAssetChanged").includes(userAssetChangedListener)) {
@@ -65,6 +82,12 @@ if (!AppEvents.listeners("setTrayVariant").includes(setTrayVariantListener)) {
 export function destroyTray() {
     AppEvents.off("userAssetChanged", userAssetChangedListener);
     AppEvents.off("setTrayVariant", setTrayVariantListener);
+
+    if (trayUpdateTimeout) {
+        clearTimeout(trayUpdateTimeout);
+        trayUpdateTimeout = null;
+    }
+    pendingTrayVariant = null;
 
     if (tray) {
         if (onTrayClick) {

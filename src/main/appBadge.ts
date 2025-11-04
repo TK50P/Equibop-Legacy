@@ -34,6 +34,11 @@ if (!AppEvents.listeners("voiceCallStateChanged").includes(voiceStateListener)) 
     AppEvents.on("voiceCallStateChanged", voiceStateListener);
 }
 
+export function destroyAppBadge() {
+    AppEvents.off("voiceCallStateChanged", voiceStateListener);
+    imgCache.clear();
+}
+
 /**
  * -1 = show unread indicator
  * 0 = clear
