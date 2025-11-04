@@ -38,8 +38,7 @@ async function getCachedTrayImage(variant: TrayVariant): Promise<NativeImage> {
 
 const userAssetChangedListener = async (asset: string) => {
     if (tray && asset.startsWith("tray")) {
-        const path = await resolveAssetPath(trayVariant as UserAssetType);
-        trayImageCache.delete(path);
+        trayImageCache.clear();
 
         const image = await getCachedTrayImage(trayVariant);
         tray.setImage(image);
