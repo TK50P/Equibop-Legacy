@@ -35,6 +35,8 @@ export function createFirstLaunchTour() {
         ...(process.platform === "win32" && { icon: join(STATIC_DIR, "icon.ico") }),
         height: 470,
         width: 550
+        height: 550,
+        width: 600
     });
 
     makeLinksOpenExternally(win);
