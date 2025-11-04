@@ -33,8 +33,6 @@ export function createFirstLaunchTour() {
         frame: true,
         autoHideMenuBar: true,
         ...(process.platform === "win32" && { icon: join(STATIC_DIR, "icon.ico") }),
-        height: 470,
-        width: 550
         height: 550,
         width: 600
     });
