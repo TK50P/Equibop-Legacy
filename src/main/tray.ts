@@ -53,8 +53,13 @@ const setTrayVariantListener = async (variant: TrayVariant) => {
     tray.setImage(image);
 };
 
-AppEvents.on("userAssetChanged", userAssetChangedListener);
-AppEvents.on("setTrayVariant", setTrayVariantListener);
+if (!AppEvents.listeners("userAssetChanged").includes(userAssetChangedListener)) {
+    AppEvents.on("userAssetChanged", userAssetChangedListener);
+}
+
+if (!AppEvents.listeners("setTrayVariant").includes(setTrayVariantListener)) {
+    AppEvents.on("setTrayVariant", setTrayVariantListener);
+}
 
 export function destroyTray() {
     AppEvents.off("userAssetChanged", userAssetChangedListener);
