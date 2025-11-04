@@ -145,18 +145,9 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
         {
             key: "arRPC",
             title: "Rich Presence",
-            description: "Enables Rich Presence via arRPC-bun",
+            description: "Enables Rich Presence via arRPC",
             defaultValue: false
         },
-        {
-            key: "arRPCDebug",
-            title: "Rich Presence Debug Logging",
-            description:
-                "Enables detailed debug logging for arRPC (bun path detection, process spawning, IPC messages, etc.)",
-            defaultValue: false,
-            disabled: () => Settings.store.arRPC === false
-        },
-
         {
             key: "openLinksWithElectron",
             title: "Open Links in app (experimental)",

@@ -9,6 +9,7 @@ Equibop is a fork of [Vesktop](https://github.com/Vencord/Vesktop).
 You can join our [discord server](https://equicord.org/discord) for commits, changes, chat or even support.<br></br>
 
 **Main features**:
+
 - Equicord preinstalled
 - Much more lightweight and faster than the official Discord app
 - Linux Screenshare with sound & wayland
@@ -19,16 +20,17 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 - Tray Customization with voice detection and notification badges
 - Command-line flags to toggle microphone and deafen status (Linux)
 - Custom Arguments from [this PR](https://github.com/Equicord/Equibop/pull/46)
-- arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun
 
 **Linux Note**:
 
 - You can use the `--toggle-mic` & `--toggle-deafen` flags to toggle your microphone and deafen status from the terminal. These can be bound to keyboard shortcuts at the system level.
 
 **Not fully Supported**:
+
 - Global Keybinds (Windows/macOS - use command-line flags on Linux instead)
 
 ## Installing
+
 Check the [Releases](https://github.com/Equicord/Equibop/releases) page
 
 OR
@@ -53,9 +55,10 @@ Below you can find unofficial packages created by the community. They are not of
 ## Building from Source
 
 You need to have the following dependencies installed:
-- [Git](https://git-scm.com/downloads)
-- [Bun](https://bun.sh)
 
+- [Git](https://git-scm.com/downloads)
+- [Node.js](https://nodejs.org/en/download)
+- pnpm: `npm install --global pnpm`
 Packaging will create builds in the dist/ folder
 
 ```sh
@@ -63,19 +66,19 @@ git clone https://github.com/Equicord/Equibop
 cd Equibop
 
 # Install Dependencies
-bun install
+pnpm i
 
 # Either run it without packaging
-bun start
+pnpm start
 
 # Or package (will build packages for your OS)
-bun package
+pnpm package
 
 # Or only build the Linux Pacman package
-bun package --linux pacman
+pnpm package --linux pacman
 
 # Or package to a directory only
-bun package:dir
+pnpm package:dir
 ```
 
 ## Building LibVesktop from Source
@@ -83,8 +86,9 @@ bun package:dir
 This is a small C++ helper library Equibop uses on Linux to emit D-Bus events. By default, prebuilt binaries for x64 and arm64 are used.
 
 If you want to build it from source:
+
 1. Install build dependencies:
     - Debian/Ubuntu: `apt install build-essential python3 curl pkg-config libglib2.0-dev`
     - Fedora: `dnf install @c-development @development-tools python3 curl pkgconf-pkg-config glib2-devel`
-2. Run `bun buildLibVesktop`
+2. Run `pnpm buildLibVesktop`
 3. From now on, building Equibop will use your own build

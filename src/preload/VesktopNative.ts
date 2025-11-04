@@ -73,30 +73,6 @@ export const VesktopNative = {
         replaceMisspelling: (word: string) => invoke<void>(IpcEvents.SPELLCHECK_REPLACE_MISSPELLING, word),
         addToDictionary: (word: string) => invoke<void>(IpcEvents.SPELLCHECK_ADD_TO_DICTIONARY, word)
     },
-    arrpc: {
-        onStreamerModeDetected(cb: StreamerModeCallback) {
-            streamerModeCallbacks.add(cb);
-        },
-        offStreamerModeDetected(cb: StreamerModeCallback) {
-            streamerModeCallbacks.delete(cb);
-        },
-        getStatus: () =>
-            sendSync<{
-                running: boolean;
-                pid: number | null;
-                port: number | null;
-                host: string | null;
-                enabled: boolean;
-                lastError: string | null;
-                lastExitCode: number | null;
-                uptime: number | null;
-                readyTime: number | null;
-                restartCount: number;
-                binaryPath: string | null;
-                isReady: boolean;
-                lastHeartbeat: number | null;
-            }>(IpcEvents.ARRPC_GET_STATUS)
-    },
     win: {
         focus: () => invoke<void>(IpcEvents.FOCUS),
         close: (key?: string) => invoke<void>(IpcEvents.CLOSE, key),

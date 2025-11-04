@@ -12,46 +12,30 @@ import { IpcCommands } from "shared/IpcEvents";
 import { onIpcCommand } from "./ipcCommands";
 import { Settings } from "./settings";
 
-const logger = new Logger("EquibopRPC", "#5865f2");
+const logger = new Logger("VesktopRPC", "#5865f2");
 const StreamerModeStore = findStoreLazy("StreamerModeStore");
 
-// handle STREAMERMODE separately from regular RPC activities
-VesktopNative.arrpc.onStreamerModeDetected(async jsonData => {
-    if (!Settings.store.arRPC) return;
-
-    try {
-        await onceReady;
-
-        const data = JSON.parse(jsonData);
-        if (Settings.store.arRPCDebug) {
-            logger.info("STREAMERMODE detected:", data);
-            logger.info("StreamerModeStore.autoToggle:", StreamerModeStore.autoToggle);
-        }
-
-        if (data.socketId === "STREAMERMODE" && StreamerModeStore.autoToggle) {
-            if (Settings.store.arRPCDebug) {
-                logger.info("Toggling streamer mode to:", data.activity?.application_id === "STREAMERMODE");
-            }
-            FluxDispatcher.dispatch({
-                type: "STREAMER_MODE_UPDATE",
-                key: "enabled",
-                value: data.activity?.application_id === "STREAMERMODE"
-            });
-        }
-    } catch (e) {
-        logger.error("Failed to handle STREAMERMODE:", e);
-    }
-});
+const arRPC = Vencord.Plugins.plugins["WebRichPresence (arRPC)"] as any as {
+    handleEvent(e: MessageEvent): void;
+};
 
 onIpcCommand(IpcCommands.RPC_ACTIVITY, async jsonData => {
     if (!Settings.store.arRPC) return;
 
     await onceReady;
 
-    const plugin = Vencord.Plugins.plugins["arRPC-bun"];
-    if (plugin?.handleEvent && Vencord.Plugins.isPluginEnabled("arRPC-bun")) {
-        plugin.handleEvent(new MessageEvent("message", { data: jsonData }));
+    const data = JSON.parse(jsonData);
+
+    if (data.socketId === "STREAMERMODE" && StreamerModeStore.autoToggle) {
+        FluxDispatcher.dispatch({
+            type: "STREAMER_MODE_UPDATE",
+            key: "enabled",
+            value: data.activity?.application_id === "STREAMERMODE"
+        });
+        return;
     }
+
+    arRPC.handleEvent(new MessageEvent("message", { data: jsonData }));
 });
 
 onIpcCommand(IpcCommands.RPC_INVITE, async code => {

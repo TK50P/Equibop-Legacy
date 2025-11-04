@@ -67,7 +67,7 @@ async function copyLibVesktop() {
         console.log("Using local libvesktop build");
     } catch {
         console.log(
-            "Using prebuilt libvesktop binaries. Run `bun buildLibVesktop` and build again to build from source - see README.md for more details"
+            "Using prebuilt libvesktop binaries. Run `pnpm buildLibVesktop` and build again to build from source - see README.md for more details"
         );
         return Promise.all([
             copyFile("./packages/libvesktop/prebuilds/vesktop-x64.node", "./static/dist/libvesktop-x64.node"),
@@ -84,6 +84,12 @@ await Promise.all([
         entryPoints: ["src/main/index.ts"],
         outfile: "dist/js/main.js",
         footer: { js: "//# sourceURL=VesktopMain" }
+    }),
+    createContext({
+        ...NodeCommonOpts,
+        entryPoints: ["src/main/arrpc/worker.ts"],
+        outfile: "dist/js/arRpcWorker.js",
+        footer: { js: "//# sourceURL=VesktopArRpcWorker" }
     }),
     createContext({
         ...NodeCommonOpts,
