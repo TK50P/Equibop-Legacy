@@ -354,48 +354,19 @@ export async function initArRPC() {
     try {
         const resolvedBinaryPath = getArRPCBinaryPath();
 
-        let dataDir: string;
-        const binaryDir = resolve(resolvedBinaryPath, "..");
-        const detectableFile = "detectable.json";
-
-        if (existsSync(join(binaryDir, detectableFile))) {
-            dataDir = binaryDir;
-        } else if (process.resourcesPath) {
-            const prodDataDir = join(process.resourcesPath, "arrpc");
-            if (existsSync(join(prodDataDir, detectableFile))) {
-                dataDir = prodDataDir;
-            } else {
-                dataDir = resolve(__dirname, "..", "..", "resources", "arrpc");
-            }
-        } else {
-            dataDir = resolve(__dirname, "..", "..", "resources", "arrpc");
-        }
-
         debugLog("Initializing arRPC");
         debugLog(`Binary path: ${resolvedBinaryPath}`);
-        debugLog(`Data directory: ${dataDir}`);
-
-        if (!existsSync(dataDir)) {
-            throw new Error(`Data directory does not exist: ${dataDir}`);
-        }
-
-        const detectablePath = join(dataDir, detectableFile);
-        if (!existsSync(detectablePath)) {
-            throw new Error(`${detectableFile} not found in data directory: ${dataDir}`);
-        }
 
         binaryPath = resolvedBinaryPath;
 
         const env = {
             ...process.env,
-            ARRPC_DATA_DIR: dataDir,
             ARRPC_IPC_MODE: "1",
             ARRPC_PARENT_MONITOR: "1"
         };
 
         arrpcProcess = spawn(resolvedBinaryPath, [], {
             stdio: ["ignore", "pipe", "pipe"],
-            cwd: dataDir,
             env,
             windowsHide: true
         });

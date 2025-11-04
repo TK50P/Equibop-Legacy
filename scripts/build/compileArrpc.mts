@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { existsSync, mkdirSync, cpSync, readFileSync, writeFileSync, unlinkSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
 const OUTPUT_DIR = join(import.meta.dir, "../../resources/arrpc");
@@ -115,33 +115,6 @@ if (failedTargets.length > 0 && !isCI) {
 	console.warn(`\nWarning: ${failedTargets.length} target(s) failed to compile:`);
 	failedTargets.forEach(t => console.warn(`  - ${t}`));
 	console.warn("Continuing with successfully compiled binaries...\n");
-}
-
-console.log("Copying detectable database files...");
-const detectableJson = join(ARRPC_DIR, "detectable.json");
-const detectableFixesJson = join(ARRPC_DIR, "detectable_fixes.json");
-
-const detectableJsonDest = join(OUTPUT_DIR, "detectable.json");
-const detectableFixesJsonDest = join(OUTPUT_DIR, "detectable_fixes.json");
-
-if (existsSync(detectableJsonDest)) {
-	unlinkSync(detectableJsonDest);
-}
-
-if (existsSync(detectableFixesJsonDest)) {
-	unlinkSync(detectableFixesJsonDest);
-}
-
-if (existsSync(detectableJson)) {
-	const content = readFileSync(detectableJson);
-	writeFileSync(detectableJsonDest, content);
-	console.log("Copied detectable.json");
-}
-
-if (existsSync(detectableFixesJson)) {
-	const content = readFileSync(detectableFixesJson);
-	writeFileSync(detectableFixesJsonDest, content);
-	console.log("Copied detectable_fixes.json");
 }
 
 console.log(`\n Successfully compiled ${compiledTargets.length} arRPC ${compiledTargets.length === 1 ? "binary" : "binaries"}!`);

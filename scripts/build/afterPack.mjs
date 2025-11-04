@@ -33,20 +33,6 @@ async function copyArRPCBinaries(context) {
         console.warn(`Warning: arRPC binary not found: ${binarySourcePath}`);
         console.warn("Run 'bun compileArrpc' to build arRPC binaries");
     }
-
-    // Copy detectable database files (dereference symlinks)
-    const detectableJson = join(arrpcSourceDir, "detectable.json");
-    const detectableFixesJson = join(arrpcSourceDir, "detectable_fixes.json");
-
-    if (existsSync(detectableJson)) {
-        cpSync(detectableJson, join(arrpcDestDir, "detectable.json"), { dereference: true });
-        console.log("Copied detectable.json");
-    }
-
-    if (existsSync(detectableFixesJson)) {
-        cpSync(detectableFixesJson, join(arrpcDestDir, "detectable_fixes.json"), { dereference: true });
-        console.log("Copied detectable_fixes.json");
-    }
 }
 
 export default async function afterPack(context) {
