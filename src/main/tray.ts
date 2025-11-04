@@ -18,6 +18,7 @@ type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMu
 
 let tray: Tray;
 let trayVariant: TrayVariant = "tray";
+let onTrayClick: (() => void) | null = null;
 
 const trayImageCache = new Map<string, NativeImage>();
 
@@ -64,13 +65,24 @@ if (!AppEvents.listeners("setTrayVariant").includes(setTrayVariantListener)) {
 export function destroyTray() {
     AppEvents.off("userAssetChanged", userAssetChangedListener);
     AppEvents.off("setTrayVariant", setTrayVariantListener);
-    tray?.destroy();
+
+    if (tray) {
+        if (onTrayClick) {
+            tray.removeListener("click", onTrayClick);
+            onTrayClick = null;
+        }
+        tray.destroy();
+    }
 
     trayImageCache.clear();
 }
 
 export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean) => void) {
-    const onTrayClick = () => {
+    if (tray) {
+        destroyTray();
+    }
+
+    onTrayClick = () => {
         if (Settings.store.clickTrayToShowHide && win.isVisible()) win.hide();
         else win.show();
     };
