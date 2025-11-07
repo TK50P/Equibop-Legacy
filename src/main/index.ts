@@ -85,6 +85,8 @@ function init() {
     if (isLinux) {
         // Support TTS on Linux using https://wiki.archlinux.org/title/Speech_dispatcher
         app.commandLine.appendSwitch("enable-speech-dispatcher");
+        // Suppress Wayland protocol errors from incomplete compositor implementations
+        app.commandLine.appendSwitch("log-level", "3");
     }
 
     disabledFeatures.forEach(feat => enabledFeatures.delete(feat));
