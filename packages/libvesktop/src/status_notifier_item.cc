@@ -63,6 +63,56 @@ const char *StatusNotifierItem::introspection_xml = R"XML(
 </node>
 )XML";
 
+const char *StatusNotifierItem::menu_introspection_xml = R"XML(
+<node>
+  <interface name="com.canonical.dbusmenu">
+    <method name="GetLayout">
+      <arg type="i" name="parentId" direction="in"/>
+      <arg type="i" name="recursionDepth" direction="in"/>
+      <arg type="as" name="propertyNames" direction="in"/>
+      <arg type="u" name="revision" direction="out"/>
+      <arg type="(ia{sv}av)" name="layout" direction="out"/>
+    </method>
+    <method name="GetGroupProperties">
+      <arg type="ai" name="ids" direction="in"/>
+      <arg type="as" name="propertyNames" direction="in"/>
+      <arg type="a(ia{sv})" name="properties" direction="out"/>
+    </method>
+    <method name="GetProperty">
+      <arg type="i" name="id" direction="in"/>
+      <arg type="s" name="name" direction="in"/>
+      <arg type="v" name="value" direction="out"/>
+    </method>
+    <method name="Event">
+      <arg type="i" name="id" direction="in"/>
+      <arg type="s" name="eventId" direction="in"/>
+      <arg type="v" name="data" direction="in"/>
+      <arg type="u" name="timestamp" direction="in"/>
+    </method>
+    <method name="AboutToShow">
+      <arg type="i" name="id" direction="in"/>
+      <arg type="b" name="needUpdate" direction="out"/>
+    </method>
+    <signal name="ItemsPropertiesUpdated">
+      <arg type="a(ia{sv})" name="updatedProps"/>
+      <arg type="a(ias)" name="removedProps"/>
+    </signal>
+    <signal name="LayoutUpdated">
+      <arg type="u" name="revision"/>
+      <arg type="i" name="parent"/>
+    </signal>
+    <signal name="ItemActivationRequested">
+      <arg type="i" name="id"/>
+      <arg type="u" name="timestamp"/>
+    </signal>
+    <property name="Version" type="u" access="read"/>
+    <property name="TextDirection" type="s" access="read"/>
+    <property name="Status" type="s" access="read"/>
+    <property name="IconThemePath" type="as" access="read"/>
+  </interface>
+</node>
+)XML";
+
 void StatusNotifierItem::handle_method_call(
     GDBusConnection *connection,
     const gchar *sender,
@@ -174,11 +224,248 @@ GVariant *StatusNotifierItem::handle_get_property(
     }
     else if (g_strcmp0(property_name, "ItemIsMenu") == 0)
     {
-        return g_variant_new_boolean(FALSE);
+        return g_variant_new_boolean(TRUE);
     }
     else if (g_strcmp0(property_name, "Menu") == 0)
     {
-        return g_variant_new_object_path("/MenuBar");
+        return g_variant_new_object_path(self->menu_object_path.c_str());
+    }
+
+    return nullptr;
+}
+
+void StatusNotifierItem::handle_menu_method_call(
+    GDBusConnection *connection,
+    const gchar *sender,
+    const gchar *object_path,
+    const gchar *interface_name,
+    const gchar *method_name,
+    GVariant *parameters,
+    GDBusMethodInvocation *invocation,
+    gpointer user_data)
+{
+    (void)connection;
+    (void)sender;
+    (void)object_path;
+    (void)interface_name;
+
+    auto *self = static_cast<StatusNotifierItem *>(user_data);
+
+    if (g_strcmp0(method_name, "GetLayout") == 0)
+    {
+        gint32 parent_id;
+        gint32 recursion_depth;
+        GVariantIter *property_names_iter;
+        g_variant_get(parameters, "(iias)", &parent_id, &recursion_depth, &property_names_iter);
+        g_variant_iter_free(property_names_iter);
+
+        GVariantBuilder layout_builder;
+        g_variant_builder_init(&layout_builder, G_VARIANT_TYPE("(ia{sv}av)"));
+
+        g_variant_builder_add(&layout_builder, "i", 0);
+
+        GVariantBuilder props_builder;
+        g_variant_builder_init(&props_builder, G_VARIANT_TYPE("a{sv}"));
+        g_variant_builder_add(&layout_builder, "a{sv}", &props_builder);
+
+        GVariantBuilder children_builder;
+        g_variant_builder_init(&children_builder, G_VARIANT_TYPE("av"));
+
+        for (const auto &item : self->menu_items)
+        {
+
+            GVariantBuilder item_builder;
+            g_variant_builder_init(&item_builder, G_VARIANT_TYPE("(ia{sv}av)"));
+
+            g_variant_builder_add(&item_builder, "i", item.id);
+
+            GVariantBuilder item_props_builder;
+            g_variant_builder_init(&item_props_builder, G_VARIANT_TYPE("a{sv}"));
+
+            if (item.is_separator)
+            {
+                g_variant_builder_add(&item_props_builder, "{sv}", "type", g_variant_new_string("separator"));
+                g_variant_builder_add(&item_props_builder, "{sv}", "visible", g_variant_new_boolean(item.visible));
+            }
+            else
+            {
+                g_variant_builder_add(&item_props_builder, "{sv}", "label", g_variant_new_string(item.label.c_str()));
+                g_variant_builder_add(&item_props_builder, "{sv}", "enabled", g_variant_new_boolean(item.enabled));
+                g_variant_builder_add(&item_props_builder, "{sv}", "visible", g_variant_new_boolean(item.visible));
+                g_variant_builder_add(&item_props_builder, "{sv}", "toggle-type", g_variant_new_string(""));
+            }
+
+            g_variant_builder_add(&item_builder, "a{sv}", &item_props_builder);
+
+            GVariantBuilder empty_children;
+            g_variant_builder_init(&empty_children, G_VARIANT_TYPE("av"));
+            g_variant_builder_add(&item_builder, "av", &empty_children);
+
+            g_variant_builder_add(&children_builder, "v", g_variant_builder_end(&item_builder));
+        }
+
+        g_variant_builder_add(&layout_builder, "av", &children_builder);
+
+        g_dbus_method_invocation_return_value(invocation,
+            g_variant_new("(u@(ia{sv}av))", self->menu_revision, g_variant_builder_end(&layout_builder)));
+    }
+    else if (g_strcmp0(method_name, "Event") == 0)
+    {
+        gint32 id;
+        const gchar *event_id;
+        GVariant *data;
+        guint32 timestamp;
+        g_variant_get(parameters, "(isvu)", &id, &event_id, &data, &timestamp);
+
+        if (g_strcmp0(event_id, "clicked") == 0)
+        {
+            if (self->menu_click_callback)
+            {
+                self->menu_click_callback(id);
+            }
+        }
+
+        g_variant_unref(data);
+        g_dbus_method_invocation_return_value(invocation, nullptr);
+    }
+    else if (g_strcmp0(method_name, "AboutToShow") == 0)
+    {
+        g_dbus_method_invocation_return_value(invocation, g_variant_new("(b)", TRUE));
+    }
+    else if (g_strcmp0(method_name, "GetGroupProperties") == 0)
+    {
+        GVariantIter *ids_iter;
+        GVariantIter *property_names_iter;
+        g_variant_get(parameters, "(aias)", &ids_iter, &property_names_iter);
+
+        std::vector<int32_t> requested_ids;
+        gint32 id;
+        while (g_variant_iter_next(ids_iter, "i", &id))
+        {
+            requested_ids.push_back(id);
+        }
+
+        g_variant_iter_free(ids_iter);
+        g_variant_iter_free(property_names_iter);
+
+        for (auto rid : requested_ids)
+        {
+            std::cout << rid << " ";
+        }
+        std::cout << std::endl;
+
+        GVariantBuilder props_builder;
+        g_variant_builder_init(&props_builder, G_VARIANT_TYPE("a(ia{sv})"));
+
+        bool root_requested = false;
+        for (auto rid : requested_ids)
+        {
+            if (rid == 0)
+            {
+                root_requested = true;
+                break;
+            }
+        }
+
+        if (root_requested || requested_ids.empty())
+        {
+            GVariantBuilder root_builder;
+            g_variant_builder_init(&root_builder, G_VARIANT_TYPE("(ia{sv})"));
+            g_variant_builder_add(&root_builder, "i", 0);
+
+            GVariantBuilder root_props;
+            g_variant_builder_init(&root_props, G_VARIANT_TYPE("a{sv}"));
+            g_variant_builder_add(&root_props, "{sv}", "children-display", g_variant_new_string("submenu"));
+
+            g_variant_builder_add(&root_builder, "@a{sv}", g_variant_builder_end(&root_props));
+            g_variant_builder_add(&props_builder, "@(ia{sv})", g_variant_builder_end(&root_builder));
+        }
+
+        for (const auto &item : self->menu_items)
+        {
+            if (!requested_ids.empty())
+            {
+                bool found = false;
+                for (auto req_id : requested_ids)
+                {
+                    if (req_id == item.id)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    continue;
+                }
+            }
+
+            GVariantBuilder item_builder;
+            g_variant_builder_init(&item_builder, G_VARIANT_TYPE("(ia{sv})"));
+            g_variant_builder_add(&item_builder, "i", item.id);
+
+            GVariantBuilder item_props;
+            g_variant_builder_init(&item_props, G_VARIANT_TYPE("a{sv}"));
+
+            if (item.is_separator)
+            {
+                g_variant_builder_add(&item_props, "{sv}", "type", g_variant_new_string("separator"));
+                g_variant_builder_add(&item_props, "{sv}", "visible", g_variant_new_boolean(item.visible));
+            }
+            else
+            {
+                g_variant_builder_add(&item_props, "{sv}", "label", g_variant_new_string(item.label.c_str()));
+                g_variant_builder_add(&item_props, "{sv}", "enabled", g_variant_new_boolean(item.enabled));
+                g_variant_builder_add(&item_props, "{sv}", "visible", g_variant_new_boolean(item.visible));
+                g_variant_builder_add(&item_props, "{sv}", "toggle-type", g_variant_new_string(""));
+            }
+
+            g_variant_builder_add(&item_builder, "@a{sv}", g_variant_builder_end(&item_props));
+            g_variant_builder_add(&props_builder, "@(ia{sv})", g_variant_builder_end(&item_builder));
+
+        }
+
+        g_dbus_method_invocation_return_value(invocation, g_variant_new("(@a(ia{sv}))", g_variant_builder_end(&props_builder)));
+    }
+    else if (g_strcmp0(method_name, "GetProperty") == 0)
+    {
+        g_dbus_method_invocation_return_value(invocation, g_variant_new("(v)", g_variant_new_string("")));
+    }
+}
+
+GVariant *StatusNotifierItem::handle_menu_get_property(
+    GDBusConnection *connection,
+    const gchar *sender,
+    const gchar *object_path,
+    const gchar *interface_name,
+    const gchar *property_name,
+    GError **error,
+    gpointer user_data)
+{
+    (void)connection;
+    (void)sender;
+    (void)object_path;
+    (void)interface_name;
+    (void)error;
+    (void)user_data;
+
+    if (g_strcmp0(property_name, "Version") == 0)
+    {
+        return g_variant_new_uint32(3);
+    }
+    else if (g_strcmp0(property_name, "TextDirection") == 0)
+    {
+        return g_variant_new_string("ltr");
+    }
+    else if (g_strcmp0(property_name, "Status") == 0)
+    {
+        return g_variant_new_string("normal");
+    }
+    else if (g_strcmp0(property_name, "IconThemePath") == 0)
+    {
+        GVariantBuilder builder;
+        g_variant_builder_init(&builder, G_VARIANT_TYPE("as"));
+        return g_variant_builder_end(&builder);
     }
 
     return nullptr;
@@ -192,8 +479,6 @@ StatusNotifierItem::StatusNotifierItem()
     if (!bus)
     {
         GErrorPtr error_ptr(error);
-        std::cerr << "[StatusNotifierItem] Failed to connect to session bus: "
-                  << (error_ptr ? error_ptr->message : "unknown error") << std::endl;
         return;
     }
 
@@ -203,9 +488,16 @@ StatusNotifierItem::StatusNotifierItem()
 
 StatusNotifierItem::~StatusNotifierItem()
 {
-    if (bus && registration_id != 0)
+    if (bus)
     {
-        g_dbus_connection_unregister_object(bus.get(), registration_id);
+        if (menu_registration_id != 0)
+        {
+            g_dbus_connection_unregister_object(bus.get(), menu_registration_id);
+        }
+        if (registration_id != 0)
+        {
+            g_dbus_connection_unregister_object(bus.get(), registration_id);
+        }
     }
 }
 
@@ -227,8 +519,6 @@ bool StatusNotifierItem::initialize()
     if (!node_info)
     {
         GErrorPtr error_ptr(error);
-        std::cerr << "[StatusNotifierItem] Failed to parse introspection XML: "
-                  << (error_ptr ? error_ptr->message : "unknown error") << std::endl;
         return false;
     }
 
@@ -246,8 +536,6 @@ bool StatusNotifierItem::initialize()
     if (registration_id == 0)
     {
         GErrorPtr error_ptr(error);
-        std::cerr << "[StatusNotifierItem] Failed to register object: "
-                  << (error_ptr ? error_ptr->message : "unknown error") << std::endl;
         return false;
     }
 
@@ -265,7 +553,6 @@ bool StatusNotifierItem::initialize()
 
     if (owner_id == 0)
     {
-        std::cerr << "[StatusNotifierItem] Failed to own name on bus" << std::endl;
         return false;
     }
 
@@ -295,8 +582,6 @@ bool StatusNotifierItem::register_with_watcher()
     if (!reply)
     {
         GErrorPtr error_ptr(error);
-        std::cerr << "[StatusNotifierItem] Failed to register with watcher: "
-                  << (error_ptr ? error_ptr->message : "unknown error") << std::endl;
         return false;
     }
 
@@ -324,7 +609,6 @@ bool StatusNotifierItem::set_icon_pixmap(const std::vector<uint8_t> &pixmap_data
     {
         if (!register_with_watcher())
         {
-            std::cerr << "[StatusNotifierItem] Failed to register with watcher after setting icon" << std::endl;
             return false;
         }
     }
@@ -343,8 +627,6 @@ bool StatusNotifierItem::set_icon_pixmap(const std::vector<uint8_t> &pixmap_data
         if (!result || error)
         {
             GErrorPtr error_ptr(error);
-            std::cerr << "[StatusNotifierItem] Failed to emit NewIcon signal: "
-                      << (error_ptr ? error_ptr->message : "unknown error") << std::endl;
             return false;
         }
     }
@@ -376,4 +658,84 @@ bool StatusNotifierItem::set_title(const std::string &title)
     }
 
     return true;
+}
+
+bool StatusNotifierItem::register_menu()
+{
+    if (!bus || menu_registration_id != 0)
+    {
+        return true;
+    }
+
+    GError *error = nullptr;
+
+    static GDBusInterfaceVTable menu_vtable = {
+        handle_menu_method_call,
+        handle_menu_get_property,
+        nullptr,
+        {}
+    };
+
+    GDBusNodeInfo *node_info = g_dbus_node_info_new_for_xml(menu_introspection_xml, &error);
+    if (!node_info)
+    {
+        GErrorPtr error_ptr(error);
+        return false;
+    }
+
+    menu_registration_id = g_dbus_connection_register_object(
+        bus.get(),
+        menu_object_path.c_str(),
+        node_info->interfaces[0],
+        &menu_vtable,
+        this,
+        nullptr,
+        &error);
+
+    g_dbus_node_info_unref(node_info);
+
+    if (menu_registration_id == 0)
+    {
+        GErrorPtr error_ptr(error);
+        return false;
+    }
+
+    return true;
+}
+
+bool StatusNotifierItem::set_menu(const std::vector<MenuItem> &items)
+{
+    if (!bus)
+        return false;
+
+    menu_items = items;
+    menu_revision++;
+
+    if (!register_menu())
+    {
+        return false;
+    }
+
+    GError *error = nullptr;
+    gboolean result = g_dbus_connection_emit_signal(
+        bus.get(),
+        nullptr,
+        menu_object_path.c_str(),
+        DBUSMENU_INTERFACE,
+        "LayoutUpdated",
+        g_variant_new("(ui)", menu_revision, 0),
+        &error);
+
+    if (!result || error)
+    {
+        GErrorPtr error_ptr(error);
+        return false;
+    }
+
+    return true;
+}
+
+void StatusNotifierItem::set_menu_click_callback(std::function<void(int32_t)> callback)
+{
+    menu_click_callback = callback;
 }

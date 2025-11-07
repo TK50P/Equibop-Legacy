@@ -191,7 +191,11 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
         destroyTray();
     }
 
-    if (isLinux && nativeSNI) {
+    // Skip native tray on Hyprland/waybar - DBusMenu clicks don't work
+    const isHyprland = process.env.HYPRLAND_INSTANCE_SIGNATURE !== undefined;
+    const isWaybar = process.env.SWAYSOCK !== undefined || isHyprland;
+
+    if (isLinux && nativeSNI && !isHyprland && !isWaybar) {
         try {
             const success = nativeSNI.initStatusNotifierItem();
             if (success) {
@@ -202,12 +206,58 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                 const pixmap = await nativeImageToPixmap(initialImage);
                 nativeSNI.setStatusNotifierIcon(pixmap);
                 nativeSNI.setStatusNotifierTitle("Equibop");
+
+                const menuItems = [
+                    { id: 1, label: "Open", enabled: true, visible: true },
+                    { id: 2, label: "About", enabled: true, visible: true },
+                    { id: 3, label: "Repair Equicord", enabled: true, visible: true },
+                    { id: 4, label: "Reset Equibop", enabled: true, visible: true },
+                    {
+                        id: 5,
+                        label: "Restart arRPC",
+                        enabled: true,
+                        visible: Settings.store.arRPC === true
+                    },
+                    { id: 6, type: "separator" as const, enabled: true, visible: true },
+                    { id: 7, label: "Restart", enabled: true, visible: true },
+                    { id: 8, label: "Quit", enabled: true, visible: true }
+                ];
+
+                const menuResult = nativeSNI.setStatusNotifierMenu(menuItems);
+
+                nativeSNI.setStatusNotifierMenuClickCallback((id: number) => {
+                    switch (id) {
+                        case 1: // open
+                            win.show();
+                            break;
+                        case 2: // about
+                            createAboutWindow();
+                            break;
+                        case 3: // repair equicord
+                            downloadVencordAsar().then(() => {
+                                app.relaunch();
+                                app.quit();
+                            });
+                            break;
+                        case 4: // reset Equibop
+                            clearData(win);
+                            break;
+                        case 5: // restart arRPC-bun
+                            restartArRPC();
+                            break;
+                        case 7: // restart
+                            app.relaunch();
+                            app.quit();
+                            break;
+                        case 8: // quit
+                            setIsQuitting(true);
+                            app.quit();
+                            break;
+                    }
+                });
                 return;
-            } else {
-                console.warn("[Tray] Native StatusNotifierItem initialization failed, falling back to Electron Tray");
             }
         } catch (e) {
-            console.error("[Tray] Error initializing native StatusNotifierItem:", e);
         }
     }
 
@@ -274,6 +324,4 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
     tray.setToolTip("Equibop");
     tray.setContextMenu(trayMenu);
     tray.on("click", onTrayClick);
-
-    console.log("[Tray] Using Electron Tray");
 }
