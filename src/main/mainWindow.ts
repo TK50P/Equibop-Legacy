@@ -389,6 +389,7 @@ function createMainWindow() {
 
     const win = (mainWin = new BrowserWindow(buildBrowserWindowOptions()));
 
+    win.webContents.setMaxListeners(15);
     win.setMenuBarVisibility(false);
 
     addSplashLog();

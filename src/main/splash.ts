@@ -29,6 +29,7 @@ export async function createSplashWindow(startMinimized = false) {
         }
     });
 
+    splash.webContents.setMaxListeners(15);
     loadView(splash, "splash.html");
 
     const { splashBackground, splashColor, splashTheming, splashProgress, splashPixelated } = Settings.store;
