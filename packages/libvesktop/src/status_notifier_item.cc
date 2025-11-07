@@ -128,10 +128,15 @@ void StatusNotifierItem::handle_method_call(
     (void)object_path;
     (void)interface_name;
     (void)parameters;
-    (void)user_data;
+
+    auto *self = static_cast<StatusNotifierItem *>(user_data);
 
     if (g_strcmp0(method_name, "Activate") == 0)
     {
+        if (self->activate_callback)
+        {
+            self->activate_callback();
+        }
         g_dbus_method_invocation_return_value(invocation, nullptr);
     }
     else if (g_strcmp0(method_name, "SecondaryActivate") == 0)
@@ -738,4 +743,9 @@ bool StatusNotifierItem::set_menu(const std::vector<MenuItem> &items)
 void StatusNotifierItem::set_menu_click_callback(std::function<void(int32_t)> callback)
 {
     menu_click_callback = callback;
+}
+
+void StatusNotifierItem::set_activate_callback(std::function<void()> callback)
+{
+    activate_callback = callback;
 }

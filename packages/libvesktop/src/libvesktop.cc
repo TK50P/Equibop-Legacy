@@ -207,6 +207,7 @@ bool request_background(bool autostart, const std::vector<std::string> &commandl
 
 static std::unique_ptr<StatusNotifierItem> g_sni_instance;
 static Napi::ThreadSafeFunction g_menu_click_callback;
+static Napi::ThreadSafeFunction g_activate_callback;
 
 Napi::Value updateUnityLauncherCount(Napi::CallbackInfo const &info)
 {
@@ -372,6 +373,10 @@ Napi::Value DestroyStatusNotifierItem(const Napi::CallbackInfo &info)
     {
         g_menu_click_callback.Release();
     }
+    if (g_activate_callback)
+    {
+        g_activate_callback.Release();
+    }
     return info.Env().Undefined();
 }
 
@@ -416,6 +421,47 @@ Napi::Value SetStatusNotifierMenuClickCallback(const Napi::CallbackInfo &info)
     return Napi::Boolean::New(env, true);
 }
 
+Napi::Value SetStatusNotifierActivateCallback(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 1 || !info[0].IsFunction())
+    {
+        Napi::TypeError::New(env, "Expected (function)").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!g_sni_instance)
+    {
+        Napi::Error::New(env, "StatusNotifierItem not initialized").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (g_activate_callback)
+    {
+        g_activate_callback.Release();
+    }
+
+    g_activate_callback = Napi::ThreadSafeFunction::New(
+        env,
+        info[0].As<Napi::Function>(),
+        "ActivateCallback",
+        0,
+        1
+    );
+
+    g_sni_instance->set_activate_callback([]() {
+        if (g_activate_callback)
+        {
+            g_activate_callback.BlockingCall([](Napi::Env env, Napi::Function jsCallback) {
+                jsCallback.Call({});
+            });
+        }
+    });
+
+    return Napi::Boolean::New(env, true);
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set("updateUnityLauncherCount", Napi::Function::New(env, updateUnityLauncherCount));
@@ -426,6 +472,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
     exports.Set("setStatusNotifierTitle", Napi::Function::New(env, SetStatusNotifierTitle));
     exports.Set("setStatusNotifierMenu", Napi::Function::New(env, SetStatusNotifierMenu));
     exports.Set("setStatusNotifierMenuClickCallback", Napi::Function::New(env, SetStatusNotifierMenuClickCallback));
+    exports.Set("setStatusNotifierActivateCallback", Napi::Function::New(env, SetStatusNotifierActivateCallback));
     exports.Set("destroyStatusNotifierItem", Napi::Function::New(env, DestroyStatusNotifierItem));
     return exports;
 }

@@ -255,6 +255,12 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                             break;
                     }
                 });
+
+                nativeSNI.setStatusNotifierActivateCallback(() => {
+                    if (Settings.store.clickTrayToShowHide && win.isVisible()) win.hide();
+                    else win.show();
+                });
+
                 return;
             }
         } catch (e) {

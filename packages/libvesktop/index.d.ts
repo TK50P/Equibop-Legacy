@@ -15,4 +15,5 @@ export function setStatusNotifierIcon(pixmapData: Buffer): boolean;
 export function setStatusNotifierTitle(title: string): boolean;
 export function setStatusNotifierMenu(items: MenuItem[]): boolean;
 export function setStatusNotifierMenuClickCallback(callback: (id: number) => void): boolean;
+export function setStatusNotifierActivateCallback(callback: () => void): boolean;
 export function destroyStatusNotifierItem(): void;

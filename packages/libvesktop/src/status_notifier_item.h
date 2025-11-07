@@ -47,6 +47,7 @@ private:
     std::vector<MenuItem> menu_items;
     uint32_t menu_revision = 1;
     std::function<void(int32_t)> menu_click_callback;
+    std::function<void()> activate_callback;
 
     static constexpr const char *WATCHER_SERVICE = "org.kde.StatusNotifierWatcher";
     static constexpr const char *WATCHER_PATH = "/StatusNotifierWatcher";
@@ -106,4 +107,5 @@ public:
     bool set_title(const std::string &title);
     bool set_menu(const std::vector<MenuItem> &items);
     void set_menu_click_callback(std::function<void(int32_t)> callback);
+    void set_activate_callback(std::function<void()> callback);
 };
