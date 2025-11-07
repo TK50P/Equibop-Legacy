@@ -6,19 +6,11 @@
 #include <optional>
 #include <cmath>
 #include <memory>
-
-template <typename T>
-struct GObjectDeleter
-{
-    void operator()(T *obj) const
-    {
-        if (obj)
-            g_object_unref(obj);
-    }
-};
-
-template <typename T>
-using GObjectPtr = std::unique_ptr<T, GObjectDeleter<T>>;
+#include <map>
+#include <string>
+#include <vector>
+#include <cstring>
+#include "status_notifier_item.h"
 
 struct GVariantDeleter
 {
@@ -213,6 +205,8 @@ bool request_background(bool autostart, const std::vector<std::string> &commandl
     return true;
 }
 
+static std::unique_ptr<StatusNotifierItem> g_sni_instance;
+
 Napi::Value updateUnityLauncherCount(Napi::CallbackInfo const &info)
 {
     if (info.Length() < 1 || !info[0].IsNumber())
@@ -258,11 +252,91 @@ Napi::Value RequestBackground(const Napi::CallbackInfo &info)
     return Napi::Boolean::New(env, ok);
 }
 
+Napi::Value InitStatusNotifierItem(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+
+    if (g_sni_instance)
+    {
+        return Napi::Boolean::New(env, true);
+    }
+
+    g_sni_instance = std::make_unique<StatusNotifierItem>();
+    bool success = g_sni_instance->initialize();
+
+    if (!success)
+    {
+        g_sni_instance.reset();
+        return Napi::Boolean::New(env, false);
+    }
+
+    return Napi::Boolean::New(env, true);
+}
+
+Napi::Value SetStatusNotifierIcon(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 1 || !info[0].IsBuffer())
+    {
+        Napi::TypeError::New(env, "Expected (Buffer)").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!g_sni_instance)
+    {
+        Napi::Error::New(env, "StatusNotifierItem not initialized").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    Napi::Buffer<uint8_t> buffer = info[0].As<Napi::Buffer<uint8_t>>();
+    std::vector<uint8_t> pixmap_data(buffer.Data(), buffer.Data() + buffer.Length());
+
+    bool success = g_sni_instance->set_icon_pixmap(pixmap_data);
+
+    return Napi::Boolean::New(env, success);
+}
+
+Napi::Value SetStatusNotifierTitle(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 1 || !info[0].IsString())
+    {
+        Napi::TypeError::New(env, "Expected (string)").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    if (!g_sni_instance)
+    {
+        Napi::Error::New(env, "StatusNotifierItem not initialized").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    std::string title = info[0].As<Napi::String>().Utf8Value();
+    bool success = g_sni_instance->set_title(title);
+
+    return Napi::Boolean::New(env, success);
+}
+
+Napi::Value DestroyStatusNotifierItem(const Napi::CallbackInfo &info)
+{
+    if (g_sni_instance)
+    {
+        g_sni_instance.reset();
+    }
+    return info.Env().Undefined();
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set("updateUnityLauncherCount", Napi::Function::New(env, updateUnityLauncherCount));
     exports.Set("getAccentColor", Napi::Function::New(env, getAccentColor));
     exports.Set("requestBackground", Napi::Function::New(env, RequestBackground));
+    exports.Set("initStatusNotifierItem", Napi::Function::New(env, InitStatusNotifierItem));
+    exports.Set("setStatusNotifierIcon", Napi::Function::New(env, SetStatusNotifierIcon));
+    exports.Set("setStatusNotifierTitle", Napi::Function::New(env, SetStatusNotifierTitle));
+    exports.Set("destroyStatusNotifierItem", Napi::Function::New(env, DestroyStatusNotifierItem));
     return exports;
 }
 
