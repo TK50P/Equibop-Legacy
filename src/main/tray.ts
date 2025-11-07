@@ -322,6 +322,14 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
     const initialImage = await getCachedTrayImage(trayVariant);
     tray = new Tray(initialImage);
     tray.setToolTip("Equibop");
-    tray.setContextMenu(trayMenu);
-    tray.on("click", onTrayClick);
+
+    if (isLinux) {
+        tray.on("click", onTrayClick);
+        tray.on("right-click", () => {
+            tray!.popUpContextMenu(trayMenu);
+        });
+    } else {
+        tray.setContextMenu(trayMenu);
+        tray.on("click", onTrayClick);
+    }
 }
