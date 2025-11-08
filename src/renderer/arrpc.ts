@@ -5,8 +5,8 @@
  */
 
 import { Logger } from "@equicord/types/utils";
-import { findLazy, findStoreLazy, onceReady } from "@equicord/types/webpack";
-import { FluxDispatcher, InviteActions } from "@equicord/types/webpack/common";
+import { findByCodeLazy, findLazy, findStoreLazy, onceReady } from "@equicord/types/webpack";
+import { ApplicationAssetUtils, FluxDispatcher, InviteActions } from "@equicord/types/webpack/common";
 import { IpcCommands } from "shared/IpcEvents";
 
 import { onIpcCommand } from "./ipcCommands";
@@ -14,6 +14,148 @@ import { Settings } from "./settings";
 
 const logger = new Logger("EquibopRPC", "#5865f2");
 const StreamerModeStore = findStoreLazy("StreamerModeStore");
+
+const fetchApplicationsRPC = findByCodeLazy('"Invalid Origin"', ".application");
+
+async function lookupAsset(applicationId: string, key: string): Promise<string> {
+    return (await ApplicationAssetUtils.fetchAssetIds(applicationId, [key]))[0];
+}
+
+const apps: any = {};
+async function lookupApp(applicationId: string): Promise<string> {
+    const socket: any = {};
+    await fetchApplicationsRPC(socket, applicationId);
+    return socket.application;
+}
+
+let ws: WebSocket | null = null;
+let reconnectTimer: NodeJS.Timeout | null = null;
+
+async function handleActivityEvent(e: MessageEvent<any>) {
+    const data = JSON.parse(e.data);
+
+    const { activity } = data;
+    const assets = activity?.assets;
+
+    if (assets?.large_image) assets.large_image = await lookupAsset(activity.application_id, assets.large_image);
+    if (assets?.small_image) assets.small_image = await lookupAsset(activity.application_id, assets.small_image);
+
+    if (activity) {
+        const appId = activity.application_id;
+        apps[appId] ||= await lookupApp(appId);
+
+        const app = apps[appId];
+        activity.name ||= app.name;
+    }
+
+    FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", ...data });
+}
+
+function connectWebSocket() {
+    const arrpcStatus = VesktopNative.arrpc?.getStatus?.();
+    const customHost = Settings.store.arRPCWebSocketCustomHost;
+    const customPort = Settings.store.arRPCWebSocketCustomPort;
+
+    // Prioritize custom settings, then fall back to integrated arRPC status
+    const host = customHost || arrpcStatus?.host || "127.0.0.1";
+    const port = customPort || arrpcStatus?.port || 1337;
+
+    const wsUrl = `ws://${host}:${port}`;
+    const isCustom = customHost || customPort;
+    logger.info(`Connecting to arRPCBun at ${wsUrl}${isCustom ? " (custom)" : ""}`);
+
+    if (ws) ws.close();
+    ws = new WebSocket(wsUrl);
+
+    ws.onmessage = handleActivityEvent;
+
+    ws.onerror = error => {
+        logger.error("WebSocket error:", error);
+    };
+
+    ws.onclose = () => {
+        const autoReconnect = Settings.store.arRPCWebSocketAutoReconnect ?? true;
+        const reconnectInterval = Settings.store.arRPCWebSocketReconnectInterval || 5000;
+
+        logger.info(`WebSocket closed${autoReconnect ? `, will attempt reconnect in ${reconnectInterval}ms` : ""}`);
+        FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", activity: null });
+
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+
+        if (autoReconnect) {
+            reconnectTimer = setTimeout(() => {
+                logger.info("Attempting to reconnect...");
+                connectWebSocket();
+            }, reconnectInterval);
+        }
+    };
+
+    ws.onopen = () => {
+        logger.info("Successfully connected to arRPCBun");
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+    };
+}
+
+function stopWebSocket() {
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+    FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", activity: null });
+    ws?.close();
+    ws = null;
+    logger.info("Stopped arRPCBun connection");
+}
+
+// Initialize WebSocket connection
+async function initArRPCBridge() {
+    await onceReady;
+
+    const customHost = Settings.store.arRPCWebSocketCustomHost;
+    const customPort = Settings.store.arRPCWebSocketCustomPort;
+    const hasCustomSettings = !!(customHost || customPort);
+
+    // If custom host/port is set, allow connection regardless of integrated arRPC state
+    if (hasCustomSettings) {
+        connectWebSocket();
+        return;
+    }
+
+    // Otherwise, only connect if integrated arRPC is enabled
+    if (!Settings.store.arRPC) {
+        stopWebSocket();
+        return;
+    }
+
+    const arrpcStatus = VesktopNative.arrpc?.getStatus?.();
+
+    // If arRPC is disabled and not running, don't try to connect
+    if (!arrpcStatus?.enabled && !arrpcStatus?.running) {
+        logger.warn("Equibop's built-in arRPC is disabled and not running");
+        stopWebSocket();
+        return;
+    }
+
+    connectWebSocket();
+}
+
+// Listen for setting changes
+Settings.addChangeListener("arRPC", initArRPCBridge);
+Settings.addChangeListener("arRPCWebSocketCustomHost", initArRPCBridge);
+Settings.addChangeListener("arRPCWebSocketCustomPort", initArRPCBridge);
+Settings.addChangeListener("arRPCWebSocketAutoReconnect", () => {
+    // If auto-reconnect is disabled, clear any pending reconnection
+    if (!Settings.store.arRPCWebSocketAutoReconnect && reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+});
+
+// Initialize on load
+initArRPCBridge();
 
 // handle STREAMERMODE separately from regular RPC activities
 VesktopNative.arrpc.onStreamerModeDetected(async jsonData => {
@@ -40,17 +182,6 @@ VesktopNative.arrpc.onStreamerModeDetected(async jsonData => {
         }
     } catch (e) {
         logger.error("Failed to handle STREAMERMODE:", e);
-    }
-});
-
-onIpcCommand(IpcCommands.RPC_ACTIVITY, async jsonData => {
-    if (!Settings.store.arRPC) return;
-
-    await onceReady;
-
-    const plugin = Vencord.Plugins.plugins["arRPC-bun"];
-    if (plugin?.handleEvent && Vencord.Plugins.isPluginEnabled("arRPC-bun")) {
-        plugin.handleEvent(new MessageEvent("message", { data: jsonData }));
     }
 });
 

@@ -14,6 +14,7 @@ import { Settings, useSettings } from "renderer/settings";
 import { isMac, isWindows } from "renderer/utils";
 
 import { Arguments } from "./Arguments";
+import { ArRPCWebSocketSettings } from "./ArRPCWebSocketSettings";
 import { AutoStartToggle } from "./AutoStartToggle";
 import { DeveloperOptionsButton } from "./DeveloperOptions";
 import { DiscordBranchPicker } from "./DiscordBranchPicker";
@@ -137,8 +138,9 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
     "Rich Presence (arRPC)": [
         {
             key: "arRPC",
-            title: "Enable Rich Presence",
-            description: "Enable the integrated RPC server",
+            title: "Enable Integrated arRPC",
+            description:
+                "Enable the integrated arRPC server (process scanning and IPC). Disable this if using only external arRPC.",
             defaultValue: false
         },
         {
@@ -161,6 +163,13 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             description: "Enables detailed debug logging (bun path detection, process spawning, IPC messages, etc.)",
             defaultValue: false,
             disabled: () => Settings.store.arRPC === false
+        },
+        ArRPCWebSocketSettings,
+        {
+            key: "arRPCWebSocketAutoReconnect",
+            title: "Auto Reconnect",
+            description: "Automatically reconnect to arRPC WebSocket when connection is lost",
+            defaultValue: true
         }
     ],
     Miscellaneous: [
