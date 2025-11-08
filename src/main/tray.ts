@@ -55,12 +55,12 @@ async function getCachedTrayImage(variant: TrayVariant): Promise<NativeImage> {
 }
 
 function nativeImageToPixmap(image: NativeImage): Promise<Buffer> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
         setImmediate(() => {
             const resized = image.resize({ width: 32, height: 32 });
             const size = resized.getSize();
-            const width = size.width;
-            const height = size.height;
+            const { width } = size;
+            const { height } = size;
 
             const bitmap = resized.toBitmap();
 
@@ -276,8 +276,7 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
 
                 return;
             }
-        } catch (e) {
-        }
+        } catch (e) {}
     }
 
     useNativeTray = false;
