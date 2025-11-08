@@ -5,15 +5,19 @@
  */
 
 import { Logger } from "@equicord/types/utils";
-import { findByCodeLazy, findLazy, findStoreLazy, onceReady } from "@equicord/types/webpack";
-import { ApplicationAssetUtils, FluxDispatcher, InviteActions } from "@equicord/types/webpack/common";
+import { findByCodeLazy, findLazy, onceReady } from "@equicord/types/webpack";
+import {
+    ApplicationAssetUtils,
+    FluxDispatcher,
+    InviteActions,
+    StreamerModeStore
+} from "@equicord/types/webpack/common";
 import { IpcCommands } from "shared/IpcEvents";
 
 import { onIpcCommand } from "./ipcCommands";
 import { Settings } from "./settings";
 
 const logger = new Logger("EquibopRPC", "#5865f2");
-const StreamerModeStore = findStoreLazy("StreamerModeStore");
 
 const fetchApplicationsRPC = findByCodeLazy('"Invalid Origin"', ".application");
 
