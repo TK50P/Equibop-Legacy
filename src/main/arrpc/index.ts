@@ -152,7 +152,8 @@ let readyTime: number | null = null;
 let restartCount: number = 0;
 let binaryPath: string | null = null;
 let isReady: boolean = false;
-let settingsListener: (() => void) | null = null;
+let mainSettingsListener: (() => void) | null = null;
+let configSettingsListener: (() => void) | null = null;
 let stderrBuffer: string = "";
 let initTimeout: NodeJS.Timeout | null = null;
 let isDestroying: boolean = false;
@@ -359,11 +360,23 @@ export async function initArRPC() {
 
         binaryPath = resolvedBinaryPath;
 
-        const env = {
+        const env: NodeJS.ProcessEnv = {
             ...process.env,
             ARRPC_IPC_MODE: "1",
             ARRPC_PARENT_MONITOR: "1"
         };
+
+        if (Settings.store.arRPCDebug) {
+            env.ARRPC_DEBUG = "1";
+        }
+
+        if (Settings.store.arRPCProcessScanning === false) {
+            env.ARRPC_NO_PROCESS_SCANNING = "1";
+        }
+
+        if (Settings.store.arRPCBridge === false) {
+            env.ARRPC_NO_BRIDGE = "1";
+        }
 
         arrpcProcess = spawn(resolvedBinaryPath, [], {
             stdio: ["ignore", "pipe", "pipe"],
@@ -428,24 +441,43 @@ export async function initArRPC() {
 }
 
 export function setupArRPC() {
-    if (settingsListener) {
+    if (mainSettingsListener) {
         debugLog("arRPC already set up");
         return;
     }
 
-    settingsListener = () => {
+    mainSettingsListener = () => {
         initArRPC();
     };
 
-    Settings.addChangeListener("arRPC", settingsListener);
-    debugLog("arRPC settings listener registered");
+    configSettingsListener = () => {
+        if (arrpcProcess && Settings.store.arRPC) {
+            restartArRPC();
+        }
+    };
+
+    Settings.addChangeListener("arRPC", mainSettingsListener);
+    Settings.addChangeListener("arRPCDebug", configSettingsListener);
+    Settings.addChangeListener("arRPCProcessScanning", configSettingsListener);
+    Settings.addChangeListener("arRPCBridge", configSettingsListener);
+    debugLog("arRPC settings listeners registered");
 }
 
 export async function cleanupArRPC() {
-    if (settingsListener) {
-        Settings.removeChangeListener("arRPC", settingsListener);
-        settingsListener = null;
-        debugLog("arRPC settings listener removed");
+    if (mainSettingsListener) {
+        Settings.removeChangeListener("arRPC", mainSettingsListener);
+        mainSettingsListener = null;
+    }
+
+    if (configSettingsListener) {
+        Settings.removeChangeListener("arRPCDebug", configSettingsListener);
+        Settings.removeChangeListener("arRPCProcessScanning", configSettingsListener);
+        Settings.removeChangeListener("arRPCBridge", configSettingsListener);
+        configSettingsListener = null;
+    }
+
+    if (mainSettingsListener === null && configSettingsListener === null) {
+        debugLog("arRPC settings listeners removed");
     }
 
     await destroyArRPC();

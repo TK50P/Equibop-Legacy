@@ -134,6 +134,35 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
         }
     ],
     Notifications: [NotificationBadgeToggle],
+    "Rich Presence (arRPC)": [
+        {
+            key: "arRPC",
+            title: "Enable Rich Presence",
+            description: "Enable the integrated RPC server",
+            defaultValue: false
+        },
+        {
+            key: "arRPCProcessScanning",
+            title: "Process Scanning",
+            description: "Enables automatic game/application detection for Rich Presence",
+            defaultValue: true,
+            disabled: () => Settings.store.arRPC === false
+        },
+        {
+            key: "arRPCBridge",
+            title: "Bridge Server",
+            description: "Enables the WebSocket bridge server for web clients",
+            defaultValue: true,
+            disabled: () => Settings.store.arRPC === false
+        },
+        {
+            key: "arRPCDebug",
+            title: "Debug Logging",
+            description: "Enables detailed debug logging (bun path detection, process spawning, IPC messages, etc.)",
+            defaultValue: false,
+            disabled: () => Settings.store.arRPC === false
+        }
+    ],
     Miscellaneous: [
         {
             key: "middleClickAutoscroll",
@@ -141,21 +170,6 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             description: "Enables middle-click scrolling (Requires a full restart)",
             defaultValue: false
         },
-        {
-            key: "arRPC",
-            title: "Rich Presence",
-            description: "Enables Rich Presence via arRPC-bun",
-            defaultValue: false
-        },
-        {
-            key: "arRPCDebug",
-            title: "Rich Presence Debug Logging",
-            description:
-                "Enables detailed debug logging for arRPC (bun path detection, process spawning, IPC messages, etc.)",
-            defaultValue: false,
-            disabled: () => Settings.store.arRPC === false
-        },
-
         {
             key: "openLinksWithElectron",
             title: "Open Links in app (experimental)",
