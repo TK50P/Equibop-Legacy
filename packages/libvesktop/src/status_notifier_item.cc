@@ -89,9 +89,18 @@ const char *StatusNotifierItem::menu_introspection_xml = R"XML(
       <arg type="v" name="data" direction="in"/>
       <arg type="u" name="timestamp" direction="in"/>
     </method>
+    <method name="EventGroup">
+      <arg type="a(isvu)" name="events" direction="in"/>
+      <arg type="ai" name="idErrors" direction="out"/>
+    </method>
     <method name="AboutToShow">
       <arg type="i" name="id" direction="in"/>
       <arg type="b" name="needUpdate" direction="out"/>
+    </method>
+    <method name="AboutToShowGroup">
+      <arg type="ai" name="ids" direction="in"/>
+      <arg type="ai" name="updatesNeeded" direction="out"/>
+      <arg type="ai" name="idErrors" direction="out"/>
     </method>
     <signal name="ItemsPropertiesUpdated">
       <arg type="a(ia{sv})" name="updatedProps"/>
@@ -229,7 +238,7 @@ GVariant *StatusNotifierItem::handle_get_property(
     }
     else if (g_strcmp0(property_name, "ItemIsMenu") == 0)
     {
-        return g_variant_new_boolean(TRUE);
+        return g_variant_new_boolean(FALSE);
     }
     else if (g_strcmp0(property_name, "Menu") == 0)
     {
@@ -333,9 +342,53 @@ void StatusNotifierItem::handle_menu_method_call(
         g_variant_unref(data);
         g_dbus_method_invocation_return_value(invocation, nullptr);
     }
+    else if (g_strcmp0(method_name, "EventGroup") == 0)
+    {
+        GVariantIter *events_iter;
+        g_variant_get(parameters, "(a(isvu))", &events_iter);
+
+        GVariantBuilder errors_builder;
+        g_variant_builder_init(&errors_builder, G_VARIANT_TYPE("ai"));
+
+        gint32 id;
+        const gchar *event_id;
+        GVariant *data;
+        guint32 timestamp;
+
+        while (g_variant_iter_next(events_iter, "(isvu)", &id, &event_id, &data, &timestamp))
+        {
+            if (g_strcmp0(event_id, "clicked") == 0)
+            {
+                if (self->menu_click_callback)
+                {
+                    self->menu_click_callback(id);
+                }
+            }
+            g_variant_unref(data);
+        }
+
+        g_variant_iter_free(events_iter);
+        g_dbus_method_invocation_return_value(invocation,
+            g_variant_new("(@ai)", g_variant_builder_end(&errors_builder)));
+    }
     else if (g_strcmp0(method_name, "AboutToShow") == 0)
     {
         g_dbus_method_invocation_return_value(invocation, g_variant_new("(b)", TRUE));
+    }
+    else if (g_strcmp0(method_name, "AboutToShowGroup") == 0)
+    {
+        GVariantIter *ids_iter;
+        g_variant_get(parameters, "(ai)", &ids_iter);
+        g_variant_iter_free(ids_iter);
+
+        GVariantBuilder updates_builder;
+        g_variant_builder_init(&updates_builder, G_VARIANT_TYPE("ai"));
+
+        GVariantBuilder errors_builder;
+        g_variant_builder_init(&errors_builder, G_VARIANT_TYPE("ai"));
+
+        g_dbus_method_invocation_return_value(invocation,
+            g_variant_new("(@ai@ai)", g_variant_builder_end(&updates_builder), g_variant_builder_end(&errors_builder)));
     }
     else if (g_strcmp0(method_name, "GetGroupProperties") == 0)
     {
@@ -352,12 +405,6 @@ void StatusNotifierItem::handle_menu_method_call(
 
         g_variant_iter_free(ids_iter);
         g_variant_iter_free(property_names_iter);
-
-        for (auto rid : requested_ids)
-        {
-            std::cout << rid << " ";
-        }
-        std::cout << std::endl;
 
         GVariantBuilder props_builder;
         g_variant_builder_init(&props_builder, G_VARIANT_TYPE("a(ia{sv})"));
@@ -729,6 +776,65 @@ bool StatusNotifierItem::set_menu(const std::vector<MenuItem> &items)
         DBUSMENU_INTERFACE,
         "LayoutUpdated",
         g_variant_new("(ui)", menu_revision, 0),
+        &error);
+
+    if (!result || error)
+    {
+        GErrorPtr error_ptr(error);
+        return false;
+    }
+
+    return true;
+}
+
+bool StatusNotifierItem::update_menu_item_label(int32_t id, const std::string &new_label)
+{
+    if (!bus)
+        return false;
+
+    bool found = false;
+    for (auto &item : menu_items)
+    {
+        if (item.id == id)
+        {
+            item.label = new_label;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+        return false;
+
+    menu_revision++;
+
+    GVariantBuilder updated_props_builder;
+    g_variant_builder_init(&updated_props_builder, G_VARIANT_TYPE("a(ia{sv})"));
+
+    GVariantBuilder item_builder;
+    g_variant_builder_init(&item_builder, G_VARIANT_TYPE("(ia{sv})"));
+    g_variant_builder_add(&item_builder, "i", id);
+
+    GVariantBuilder props_builder;
+    g_variant_builder_init(&props_builder, G_VARIANT_TYPE("a{sv}"));
+    g_variant_builder_add(&props_builder, "{sv}", "label", g_variant_new_string(new_label.c_str()));
+
+    g_variant_builder_add(&item_builder, "@a{sv}", g_variant_builder_end(&props_builder));
+    g_variant_builder_add(&updated_props_builder, "@(ia{sv})", g_variant_builder_end(&item_builder));
+
+    GVariantBuilder removed_props_builder;
+    g_variant_builder_init(&removed_props_builder, G_VARIANT_TYPE("a(ias)"));
+
+    GError *error = nullptr;
+    gboolean result = g_dbus_connection_emit_signal(
+        bus.get(),
+        nullptr,
+        menu_object_path.c_str(),
+        DBUSMENU_INTERFACE,
+        "ItemsPropertiesUpdated",
+        g_variant_new("(@a(ia{sv})@a(ias))",
+                      g_variant_builder_end(&updated_props_builder),
+                      g_variant_builder_end(&removed_props_builder)),
         &error);
 
     if (!result || error)

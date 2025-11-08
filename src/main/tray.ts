@@ -34,6 +34,8 @@ let trayVariant: TrayVariant = "tray";
 let onTrayClick: (() => void) | null = null;
 let trayUpdateTimeout: NodeJS.Timeout | null = null;
 let pendingTrayVariant: TrayVariant | null = null;
+let nativeTrayWindow: BrowserWindow | null = null;
+let nativeTrayUpdateCallback: (() => void) | null = null;
 
 const trayImageCache = new Map<string, NativeImage>();
 
@@ -166,6 +168,12 @@ export function destroyTray() {
 
     if (useNativeTray && nativeSNI) {
         try {
+            if (nativeTrayWindow && nativeTrayUpdateCallback) {
+                nativeTrayWindow.off("show", nativeTrayUpdateCallback);
+                nativeTrayWindow.off("hide", nativeTrayUpdateCallback);
+                nativeTrayWindow = null;
+                nativeTrayUpdateCallback = null;
+            }
             nativeSNI.destroyStatusNotifierItem();
             nativeTrayInitialized = false;
         } catch (e) {
@@ -191,11 +199,7 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
         destroyTray();
     }
 
-    // Skip native tray on Hyprland/waybar - DBusMenu clicks don't work
-    const isHyprland = process.env.HYPRLAND_INSTANCE_SIGNATURE !== undefined;
-    const isWaybar = process.env.SWAYSOCK !== undefined || isHyprland;
-
-    if (isLinux && nativeSNI && !isHyprland && !isWaybar) {
+    if (isLinux && nativeSNI) {
         try {
             const success = nativeSNI.initStatusNotifierItem();
             if (success) {
@@ -208,7 +212,7 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                 nativeSNI.setStatusNotifierTitle("Equibop");
 
                 const menuItems = [
-                    { id: 1, label: "Open", enabled: true, visible: true },
+                    { id: 1, label: win.isVisible() ? "Hide" : "Open", enabled: true, visible: true },
                     { id: 2, label: "About", enabled: true, visible: true },
                     { id: 3, label: "Repair Equicord", enabled: true, visible: true },
                     { id: 4, label: "Reset Equibop", enabled: true, visible: true },
@@ -225,10 +229,19 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
 
                 const menuResult = nativeSNI.setStatusNotifierMenu(menuItems);
 
+                nativeTrayWindow = win;
+                nativeTrayUpdateCallback = () => {
+                    nativeSNI.updateStatusNotifierMenuItem(1, win.isVisible() ? "Hide" : "Open");
+                };
+
+                win.on("show", nativeTrayUpdateCallback);
+                win.on("hide", nativeTrayUpdateCallback);
+
                 nativeSNI.setStatusNotifierMenuClickCallback((id: number) => {
                     switch (id) {
-                        case 1: // open
-                            win.show();
+                        case 1: // open/hide
+                            if (win.isVisible()) win.hide();
+                            else win.show();
                             break;
                         case 2: // about
                             createAboutWindow();
