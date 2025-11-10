@@ -10,10 +10,19 @@ import { classNameFactory } from "@equicord/types/api/Styles";
 import { FormSwitch } from "@equicord/types/components";
 import { closeModal, Logger, Modals, ModalSize, openModal, useAwaiter } from "@equicord/types/utils";
 import { onceReady } from "@equicord/types/webpack";
-import { Button, Card, FluxDispatcher, Forms, Select, Text, UserStore, useState } from "@equicord/types/webpack/common";
+import {
+    Button,
+    Card,
+    FluxDispatcher,
+    Forms,
+    MediaEngineStore,
+    Select,
+    Text,
+    UserStore,
+    useState
+} from "@equicord/types/webpack/common";
 import { Node } from "@vencord/venmic";
 import type { Dispatch, SetStateAction } from "react";
-import { MediaEngineStore } from "renderer/common";
 import { addPatch } from "renderer/patches/shared";
 import { State, useSettings, useVesktopState } from "renderer/settings";
 import { isLinux, isWindows } from "renderer/utils";

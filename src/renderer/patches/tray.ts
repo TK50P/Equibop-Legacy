@@ -4,12 +4,10 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { findStoreLazy, onceReady } from "@equicord/types/webpack";
-import { FluxDispatcher, UserStore } from "@equicord/types/webpack/common";
+import { onceReady } from "@equicord/types/webpack";
+import { FluxDispatcher, MediaEngineStore, UserStore } from "@equicord/types/webpack/common";
 
 import { setBadge } from "../appBadge";
-
-const MediaEngineStore = findStoreLazy("MediaEngineStore");
 
 type TrayVariant = "tray" | "trayUnread" | "traySpeaking" | "trayIdle" | "trayMuted" | "trayDeafened";
 

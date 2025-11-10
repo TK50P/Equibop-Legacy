@@ -5,7 +5,7 @@
  */
 
 import { Logger } from "@equicord/types/utils";
-import { MediaEngineStore } from "renderer/common";
+import { MediaEngineStore } from "@equicord/types/webpack/common";
 
 const logger = new Logger("FixAutoGain");
 

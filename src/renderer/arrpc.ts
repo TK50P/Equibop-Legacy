@@ -5,9 +5,10 @@
  */
 
 import { Logger } from "@equicord/types/utils";
-import { findByCodeLazy, findLazy, onceReady } from "@equicord/types/webpack";
+import { findLazy, onceReady } from "@equicord/types/webpack";
 import {
     ApplicationAssetUtils,
+    fetchApplicationsRPC,
     FluxDispatcher,
     InviteActions,
     StreamerModeStore
@@ -18,8 +19,6 @@ import { onIpcCommand } from "./ipcCommands";
 import { Settings } from "./settings";
 
 const logger = new Logger("EquibopRPC", "#5865f2");
-
-const fetchApplicationsRPC = findByCodeLazy('"Invalid Origin"', ".application");
 
 async function lookupAsset(applicationId: string, key: string): Promise<string> {
     return (await ApplicationAssetUtils.fetchAssetIds(applicationId, [key]))[0];
