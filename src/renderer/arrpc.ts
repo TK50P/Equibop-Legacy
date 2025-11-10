@@ -60,7 +60,6 @@ function connectWebSocket() {
     const customHost = Settings.store.arRPCWebSocketCustomHost;
     const customPort = Settings.store.arRPCWebSocketCustomPort;
 
-    // Prioritize custom settings, then fall back to integrated arRPC status
     const host = customHost || arrpcStatus?.host || "127.0.0.1";
     const port = customPort || arrpcStatus?.port || 1337;
 
@@ -114,7 +113,6 @@ function stopWebSocket() {
     logger.info("Stopped arRPCBun connection");
 }
 
-// Initialize WebSocket connection
 async function initArRPCBridge() {
     await onceReady;
 
@@ -122,13 +120,11 @@ async function initArRPCBridge() {
     const customPort = Settings.store.arRPCWebSocketCustomPort;
     const hasCustomSettings = !!(customHost || customPort);
 
-    // If custom host/port is set, allow connection regardless of integrated arRPC state
     if (hasCustomSettings) {
         connectWebSocket();
         return;
     }
 
-    // Otherwise, only connect if integrated arRPC is enabled
     if (!Settings.store.arRPC) {
         stopWebSocket();
         return;
@@ -136,7 +132,6 @@ async function initArRPCBridge() {
 
     const arrpcStatus = VesktopNative.arrpc?.getStatus?.();
 
-    // If arRPC is disabled and not running, don't try to connect
     if (!arrpcStatus?.enabled && !arrpcStatus?.running) {
         logger.warn("Equibop's built-in arRPC is disabled and not running");
         stopWebSocket();
@@ -146,19 +141,16 @@ async function initArRPCBridge() {
     connectWebSocket();
 }
 
-// Listen for setting changes
 Settings.addChangeListener("arRPC", initArRPCBridge);
 Settings.addChangeListener("arRPCWebSocketCustomHost", initArRPCBridge);
 Settings.addChangeListener("arRPCWebSocketCustomPort", initArRPCBridge);
 Settings.addChangeListener("arRPCWebSocketAutoReconnect", () => {
-    // If auto-reconnect is disabled, clear any pending reconnection
     if (!Settings.store.arRPCWebSocketAutoReconnect && reconnectTimer) {
         clearTimeout(reconnectTimer);
         reconnectTimer = null;
     }
 });
 
-// Initialize on load
 initArRPCBridge();
 
 // handle STREAMERMODE separately from regular RPC activities
