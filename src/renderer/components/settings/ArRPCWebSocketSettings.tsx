@@ -26,7 +26,7 @@ export const ArRPCWebSocketSettings: SettingsComponent = ({ settings }) => {
                     <Modals.ModalCloseButton onClick={props.onClose} />
                 </Modals.ModalHeader>
                 <Modals.ModalContent>
-                    <Forms.FormSection>
+                    <div>
                         <Forms.FormTitle tag="h3">Custom Host</Forms.FormTitle>
                         <Forms.FormText>
                             Leave empty to use default/built-in arRPC server. Specify a custom host to connect to
@@ -38,8 +38,8 @@ export const ArRPCWebSocketSettings: SettingsComponent = ({ settings }) => {
                             onChange={value => (customHost = value)}
                             placeholder="127.0.0.1"
                         />
-                    </Forms.FormSection>
-                    <Forms.FormSection className={Margins.top16}>
+                    </div>
+                    <div className={Margins.top16}>
                         <Forms.FormTitle tag="h3">Custom Port</Forms.FormTitle>
                         <Forms.FormText>
                             Leave 0 to use default/built-in arRPC server. Specify a custom port to connect to external
@@ -51,8 +51,8 @@ export const ArRPCWebSocketSettings: SettingsComponent = ({ settings }) => {
                             onChange={value => (customPort = value)}
                             placeholder="0"
                         />
-                    </Forms.FormSection>
-                    <Forms.FormSection className={Margins.top16}>
+                    </div>
+                    <div className={Margins.top16}>
                         <Forms.FormTitle tag="h3">Reconnect Interval (ms)</Forms.FormTitle>
                         <Forms.FormText>
                             Time in milliseconds between reconnection attempts when auto-reconnect is enabled (5000 = 5
@@ -64,7 +64,7 @@ export const ArRPCWebSocketSettings: SettingsComponent = ({ settings }) => {
                             onChange={value => (reconnectInterval = value)}
                             placeholder="5000"
                         />
-                    </Forms.FormSection>
+                    </div>
                 </Modals.ModalContent>
                 <Modals.ModalFooter>
                     <Button
