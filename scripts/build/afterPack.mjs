@@ -11,6 +11,11 @@ async function copyArRPCBinaries(context) {
     const archMap = { 0: "ia32", 1: "x64", 2: "armv7l", 3: "arm64" };
     const archString = typeof arch === "number" ? archMap[arch] : arch;
 
+    if (archString === "universal") {
+        console.log("Skipping arRPC copy for universal build (already merged from x64/arm64)");
+        return;
+    }
+
     const resourcesDir = join(appOutDir, electronPlatformName === "darwin" ? `${context.packager.appInfo.productFilename}.app/Contents/Resources` : "resources");
     const arrpcDestDir = join(resourcesDir, "arrpc");
 
