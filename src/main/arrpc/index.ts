@@ -130,6 +130,18 @@ function getArRPCBinaryPath(): string {
         }
     }
 
+    if (STATIC_DIR.includes(".asar")) {
+        const asarDir = STATIC_DIR.split(".asar")[0] + ".asar";
+        const asarParent = join(asarDir, "..");
+        const systemPath = join(asarParent, "arrpc", binaryName);
+        debugLog(`Checking system Electron path: ${systemPath}`);
+
+        if (checkBinary(systemPath)) {
+            debugLog(`Found arRPC binary at system path: ${systemPath}`);
+            return systemPath;
+        }
+    }
+
     const devPath = join(STATIC_DIR, "dist", binaryName);
     debugLog(`Checking dev path: ${devPath}`);
     if (checkBinary(devPath)) {
