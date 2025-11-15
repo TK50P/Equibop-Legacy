@@ -133,10 +133,7 @@
             "target": [
                 {
                     "target": "default",
-                    "arch": [
-                        "x64",
-                        "arm64"
-                    ]
+                    "arch": "universal"
                 }
             ],
             "category": "public.app-category.social-networking",
