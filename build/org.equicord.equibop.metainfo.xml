@@ -30,6 +30,19 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="3.1.1" date="2025-11-15" type="stable">
+      <url>https://github.com/Equicord/Equibop/releases/tag/v3.1.1</url>
+      <description>
+        <p>What's Changed</p>
+        <ul>
+          <li>Moved arrpc build to static/dist for consistency</li>
+          <li>Fixed macOS universal binary packaging</li>
+          <li>Fixed --start-minimized flag when splash is disabled</li>
+          <li>Fixed potential CLI argument parsing edge case</li>
+          <li>Updated dependencies (Electron 39.2.0, arrpc-bun 1.3.1)</li>
+        </ul>
+      </description>
+    </release>
     <release version="3.1.0" date="2025-11-01" type="stable">
       <url>https://github.com/Equicord/Equibop/releases/tag/v3.1.0</url>
       <description>
