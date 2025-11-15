@@ -19,35 +19,25 @@ async function copyArRPCBinaries(context) {
     const arrpcSourceDir = join(process.cwd(), "static", "dist");
     const platformName = electronPlatformName === "win32" ? "windows" : electronPlatformName;
 
+    let sourceBinaryName = `arrpc-${platformName}-${archString}`;
+    if (electronPlatformName === "win32") sourceBinaryName += ".exe";
+
+    let destBinaryName;
     if (electronPlatformName === "darwin") {
-        const architectures = ["x64", "arm64"];
-        for (const arch of architectures) {
-            const binaryName = `arrpc-${platformName}-${arch}`;
-            const binarySourcePath = join(arrpcSourceDir, binaryName);
-
-            if (existsSync(binarySourcePath)) {
-                const binaryDestPath = join(arrpcDestDir, binaryName);
-                console.log(`Copying arRPC binary: ${binaryName}...`);
-                cpSync(binarySourcePath, binaryDestPath);
-            } else {
-                console.warn(`Warning: arRPC binary not found: ${binarySourcePath}`);
-                console.warn("Run 'bun compileArrpc' to build arRPC binaries");
-            }
-        }
+        destBinaryName = "arrpc";
     } else {
-        let binaryName = `arrpc-${platformName}-${archString}`;
-        if (electronPlatformName === "win32") binaryName += ".exe";
+        destBinaryName = sourceBinaryName;
+    }
 
-        const binarySourcePath = join(arrpcSourceDir, binaryName);
+    const binarySourcePath = join(arrpcSourceDir, sourceBinaryName);
 
-        if (existsSync(binarySourcePath)) {
-            const binaryDestPath = join(arrpcDestDir, binaryName);
-            console.log(`Copying arRPC binary: ${binaryName}...`);
-            cpSync(binarySourcePath, binaryDestPath);
-        } else {
-            console.warn(`Warning: arRPC binary not found: ${binarySourcePath}`);
-            console.warn("Run 'bun compileArrpc' to build arRPC binaries");
-        }
+    if (existsSync(binarySourcePath)) {
+        const binaryDestPath = join(arrpcDestDir, destBinaryName);
+        console.log(`Copying arRPC binary: ${sourceBinaryName} -> ${destBinaryName}...`);
+        cpSync(binarySourcePath, binaryDestPath);
+    } else {
+        console.warn(`Warning: arRPC binary not found: ${binarySourcePath}`);
+        console.warn("Run 'bun compileArrpc' to build arRPC binaries");
     }
 }
 
