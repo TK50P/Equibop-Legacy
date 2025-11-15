@@ -2,8 +2,8 @@ import { execSync } from "child_process";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
-const OUTPUT_DIR = join(import.meta.dir, "../../resources/arrpc");
-const ARRPC_DIR = join(import.meta.dir, "../../node_modules/arrpc-bun");
+const OUTPUT_DIR = join(import.meta.dir, "..", "..", "static/dist");
+const ARRPC_DIR = join(import.meta.dir, "..", "..", "node_modules/arrpc-bun");
 const ARRPC_ENTRY = join(ARRPC_DIR, "src/index.ts");
 
 interface CompileTarget {

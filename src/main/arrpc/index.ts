@@ -6,7 +6,8 @@
 
 import { ChildProcess, spawn } from "child_process";
 import { accessSync, constants, existsSync, statSync } from "fs";
-import { join, resolve } from "path";
+import { join } from "path";
+import { STATIC_DIR } from "shared/paths";
 
 import { Settings } from "../settings";
 
@@ -123,23 +124,14 @@ function getArRPCBinaryPath(): string {
         }
     }
 
-    debugLog("No bundled arRPC binary found, trying alternative paths");
-
-    const devPath = resolve(__dirname, "..", "..", "resources", "arrpc", binaryName);
+    const devPath = join(STATIC_DIR, "dist", binaryName);
     debugLog(`Checking dev path: ${devPath}`);
     if (checkBinary(devPath)) {
         debugLog(`Found arRPC binary at dev path: ${devPath}`);
         return devPath;
     }
 
-    const asarPath = resolve(__dirname.replace(/app\.asar.*$/, ""), "arrpc", binaryName);
-    debugLog(`Checking asar-relative path: ${asarPath}`);
-    if (checkBinary(asarPath)) {
-        debugLog(`Found arRPC binary at asar-relative path: ${asarPath}`);
-        return asarPath;
-    }
-
-    throw new Error(`arRPC binary not found for ${platformName}-${arch}. Tried: ${devPath}, ${asarPath}`);
+    throw new Error(`arRPC binary not found for ${platformName}-${arch}. Tried: ${devPath}`);
 }
 
 let arrpcProcess: ChildProcess | null = null;

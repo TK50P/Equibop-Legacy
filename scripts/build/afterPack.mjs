@@ -16,7 +16,7 @@ async function copyArRPCBinaries(context) {
 
     mkdirSync(arrpcDestDir, { recursive: true });
 
-    const arrpcSourceDir = join(process.cwd(), "resources", "arrpc");
+    const arrpcSourceDir = join(process.cwd(), "static", "dist");
 
     // Determine binary name
     const platformName = electronPlatformName === "win32" ? "windows" : electronPlatformName;
