@@ -30,6 +30,15 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="3.1.2" date="2025-11-15" type="stable">
+      <url>https://github.com/Equicord/Equibop/releases/tag/v3.1.2</url>
+      <description>
+        <p>What's Changed</p>
+        <ul>
+          <li>Fixed Libvesktop</li>
+        </ul>
+      </description>
+    </release>
     <release version="3.1.1" date="2025-11-15" type="stable">
       <url>https://github.com/Equicord/Equibop/releases/tag/v3.1.1</url>
       <description>
