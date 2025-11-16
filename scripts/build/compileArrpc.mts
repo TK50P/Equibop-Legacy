@@ -67,6 +67,9 @@ let targetsToCompile = TARGETS;
 if (isCI) {
 	targetsToCompile = TARGETS.filter(t => t.platform === currentPlatform);
 	console.log(`Running in CI on ${currentPlatform}, compiling only for current platform...`);
+} else if (currentPlatform === "darwin") {
+	targetsToCompile = TARGETS.filter(t => t.platform === currentPlatform);
+	console.log(`Compiling arRPC binaries for macOS universal build: x64 and arm64`);
 } else {
 	targetsToCompile = TARGETS.filter(t => t.platform === currentPlatform && t.arch === currentArch);
 	console.log(`Compiling arRPC binary for current machine: ${currentPlatform}-${currentArch}`);
