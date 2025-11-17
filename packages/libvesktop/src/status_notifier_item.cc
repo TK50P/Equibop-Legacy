@@ -534,7 +534,7 @@ StatusNotifierItem::StatusNotifierItem()
         return;
     }
 
-    service_name = "org.kde.StatusNotifierItem-" + std::to_string(getpid()) + "-1";
+    service_name = "org.equicord.equibop.StatusNotifierItem";
     object_path = "/StatusNotifierItem";
 }
 
