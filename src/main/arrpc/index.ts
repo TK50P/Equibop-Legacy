@@ -89,13 +89,8 @@ function getArRPCBinaryPath(): string {
 
     const platformName = platform === "win32" ? "windows" : platform;
 
-    let binaryName;
-    if (platform === "darwin") {
-        binaryName = "arrpc";
-    } else {
-        binaryName = `arrpc-${platformName}-${arch}`;
-        if (platform === "win32") binaryName += ".exe";
-    }
+    let binaryName = `arrpc-${platformName}-${arch}`;
+    if (platform === "win32") binaryName += ".exe";
 
     debugLog(`Looking for arRPC binary for platform=${platform}, arch=${arch}`);
 
