@@ -5,6 +5,7 @@
  */
 
 import { ChildProcess, spawn } from "child_process";
+import { app } from "electron";
 import { accessSync, constants, existsSync, statSync } from "fs";
 import { join } from "path";
 import { STATIC_DIR } from "shared/paths";
@@ -89,13 +90,9 @@ function getArRPCBinaryPath(): string {
 
     const platformName = platform === "win32" ? "windows" : platform;
 
-    let binaryName;
-    if (platform === "darwin") {
-        binaryName = "arrpc";
-    } else {
-        binaryName = `arrpc-${platformName}-${arch}`;
-        if (platform === "win32") binaryName += ".exe";
-    }
+    let binaryName = `arrpc-${platformName}-${arch}`;
+    if (platform === "win32") binaryName += ".exe";
+    if (app.isPackaged) binaryName = platform === "win32" ? "arrpc.exe" : "arrpc";
 
     debugLog(`Looking for arRPC binary for platform=${platform}, arch=${arch}`);
 
