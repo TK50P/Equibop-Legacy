@@ -24,21 +24,14 @@ async function copyArRPCBinaries(context) {
     const arrpcSourceDir = join(process.cwd(), "static", "dist");
     const platformName = electronPlatformName === "win32" ? "windows" : electronPlatformName;
 
-    let sourceBinaryName = `arrpc-${platformName}-${archString}`;
-    if (electronPlatformName === "win32") sourceBinaryName += ".exe";
+    let binaryName = `arrpc-${platformName}-${archString}`;
+    if (electronPlatformName === "win32") binaryName += ".exe";
 
-    let destBinaryName;
-    if (electronPlatformName === "darwin") {
-        destBinaryName = "arrpc";
-    } else {
-        destBinaryName = sourceBinaryName;
-    }
-
-    const binarySourcePath = join(arrpcSourceDir, sourceBinaryName);
-
+    const binarySourcePath = join(arrpcSourceDir, binaryName);
     if (existsSync(binarySourcePath)) {
+        const destBinaryName = electronPlatformName === "win32" ? "arrpc.exe" : "arrpc";
         const binaryDestPath = join(arrpcDestDir, destBinaryName);
-        console.log(`Copying arRPC binary: ${sourceBinaryName} -> ${destBinaryName}...`);
+        console.log(`Copying arRPC binary: ${binaryName} -> ${destBinaryName}...`);
         cpSync(binarySourcePath, binaryDestPath);
     } else {
         console.warn(`Warning: arRPC binary not found: ${binarySourcePath}`);
