@@ -33,7 +33,7 @@ Check the [Releases](https://github.com/Equicord/Equibop/releases) page
 
 OR
 
-Check The Downloads from the [website](https://equicord.org/downloads)
+Check The Downloads from the [website](https://equicord.org/download)
 
 ### Linux
 
