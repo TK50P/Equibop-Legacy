@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <gio/gio.h>
 #include <memory>
 #include <string>
