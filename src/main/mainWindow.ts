@@ -396,7 +396,9 @@ function createMainWindow() {
     addSplashLog();
 
     if (process.platform === "darwin" && Settings.store.customTitleBar) win.setWindowButtonVisibility(false);
-    if (process.platform === "linux") spoofGnu(win);
+    if (process.platform !== "win32" && CommandLine.values["windows-spoof"]) {
+        spoofGnu(win);
+    }
 
     win.on("close", e => {
         const useTray = !isDeckGameMode && Settings.store.minimizeToTray !== false && Settings.store.tray !== false;
