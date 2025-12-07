@@ -7,12 +7,11 @@
 import "./screenSharePicker.css";
 
 import { classNameFactory } from "@equicord/types/api/Styles";
-import { CogWheel, FormSwitch, RestartIcon } from "@equicord/types/components";
+import { Card, CogWheel, FormSwitch, RestartIcon } from "@equicord/types/components";
 import { closeModal, Logger, Modals, ModalSize, openModal, useAwaiter, useForceUpdater } from "@equicord/types/utils";
 import { onceReady } from "@equicord/types/webpack";
 import {
     Button,
-    Card,
     FluxDispatcher,
     Forms,
     MediaEngineStore,
