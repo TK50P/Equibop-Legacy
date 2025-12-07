@@ -28,7 +28,7 @@ interface UserAgentMetadata {
 interface FakeData {
     userAgent: string; // navigator.userAgent
     platform: string; // navagitor.platform
-    metadata: UserAgentMetadata; // idiotic content for requests idk bro web is annoying
+    metadata: UserAgentMetadata;
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/User-agent_reduction
@@ -120,8 +120,7 @@ export async function spoofGnu(window: BrowserWindow) {
     window.webContents.debugger.on("detach", (_e, reason) => {
         console.info(`Debugger detached: ${reason}`);
     });
-
-    // Apparently it doesn't have the spoof on reload?? thanks for noticing that MilkShift :trollface: ((and sorry for somewhat bugging goofcord cuz of the non complete spoof))
+    
     // https://www.electronjs.org/docs/latest/api/web-contents#event-did-navigate
     window.webContents.on("did-navigate", async () => {
         console.log("Navigation detected, re-running spoof");
