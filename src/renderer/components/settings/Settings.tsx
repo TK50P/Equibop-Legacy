@@ -7,7 +7,7 @@
 import "./settings.css";
 
 import { classNameFactory } from "@equicord/types/api/Styles";
-import { Divider, ErrorBoundary } from "@equicord/types/components";
+import { Divider, SettingsTab, wrapTab } from "@equicord/types/components";
 import { Text } from "@equicord/types/webpack/common";
 import { ComponentType } from "react";
 import { Settings, useSettings } from "renderer/settings";
@@ -225,20 +225,13 @@ function SettingsSections() {
     return <>{sections}</>;
 }
 
-export default ErrorBoundary.wrap(
-    function SettingsUI() {
-        return (
-            <section>
-                <Text variant="heading-xl/semibold" color="header-primary" className={cl("title")}>
-                    Vesktop Settings
-                </Text>
-                <Updater />
-                <SettingsSections />
-            </section>
-        );
-    },
-    {
-        message:
-            "Failed to render the Equibop Settings tab. If this issue persists, try to right click the Equibop tray icon, then click 'Repair Equicord'. And make sure your Equibop is up to date."
-    }
-);
+function SettingsUI() {
+    return (
+        <SettingsTab>
+            <Updater />
+            <SettingsSections />
+        </SettingsTab>
+    );
+}
+
+export default wrapTab(SettingsUI, "Equibop Settings");

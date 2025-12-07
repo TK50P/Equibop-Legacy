@@ -21,8 +21,8 @@ import { VesktopLogger } from "./logger";
 import { Settings } from "./settings";
 export { Settings };
 
-import { VesktopSettingsIcon } from "@equicord/types/components/Icons";
 import type SettingsPlugin from "@equicord/types/plugins/_core/settings";
+import { VesktopSettingsIcon } from "shared/icons";
 
 VesktopLogger.log("read if cute :3");
 VesktopLogger.log(`Equibop v${VesktopNative.app.getVersion()}`);
