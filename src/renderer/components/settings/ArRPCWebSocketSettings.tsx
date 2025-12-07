@@ -13,6 +13,7 @@ import { SettingsComponent } from "./Settings";
 
 export const ArRPCWebSocketSettings: SettingsComponent = ({ settings }) => {
     const settingsStore = useSettings();
+    const isDisabled = settingsStore.arRPCDisabled || settingsStore.arRPC;
 
     const openWebSocketModal = () => {
         let customHost = settingsStore.arRPCWebSocketCustomHost || "";
@@ -71,15 +72,29 @@ export const ArRPCWebSocketSettings: SettingsComponent = ({ settings }) => {
                         style={{ marginLeft: "10px" }}
                         color={Button.Colors.BRAND}
                         onClick={() => {
-                            settingsStore.arRPCWebSocketCustomHost = customHost;
-                            settingsStore.arRPCWebSocketCustomPort = customPort ? parseInt(customPort, 10) : 0;
-                            settingsStore.arRPCWebSocketReconnectInterval = reconnectInterval
-                                ? parseInt(reconnectInterval, 10)
-                                : 5000;
+                            settingsStore.arRPCWebSocketCustomHost = customHost || "";
+                            const parsedPort = parseInt(customPort, 10);
+                            settingsStore.arRPCWebSocketCustomPort = isNaN(parsedPort) ? 0 : parsedPort;
+                            const parsedInterval = parseInt(reconnectInterval, 10);
+                            settingsStore.arRPCWebSocketReconnectInterval = isNaN(parsedInterval)
+                                ? 5000
+                                : parsedInterval;
                             props.onClose();
                         }}
                     >
                         Save
+                    </Button>
+                    <Button
+                        style={{ marginLeft: "10px" }}
+                        color={Button.Colors.RED}
+                        onClick={() => {
+                            settingsStore.arRPCWebSocketCustomHost = "";
+                            settingsStore.arRPCWebSocketCustomPort = 0;
+                            settingsStore.arRPCWebSocketReconnectInterval = 5000;
+                            props.onClose();
+                        }}
+                    >
+                        Reset to Default
                     </Button>
                     <Button onClick={props.onClose}>Close</Button>
                 </Modals.ModalFooter>
@@ -97,7 +112,9 @@ export const ArRPCWebSocketSettings: SettingsComponent = ({ settings }) => {
                         arRPC servers.
                     </Forms.FormText>
                 </div>
-                <Button onClick={openWebSocketModal}>Configure</Button>
+                <Button onClick={openWebSocketModal} disabled={isDisabled}>
+                    Configure
+                </Button>
             </div>
             <Divider className={Margins.top20 + " " + Margins.bottom20} />
         </div>

@@ -8,8 +8,10 @@ import { ChildProcess, spawn } from "child_process";
 import { app } from "electron";
 import { accessSync, constants, existsSync, statSync } from "fs";
 import { join } from "path";
+import { IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
 
+import { mainWin } from "../mainWindow";
 import { Settings } from "../settings";
 
 interface ArRPCStreamerModeMessage {
@@ -311,6 +313,7 @@ function handleArRPCMessage(message: ArRPCMessage) {
 
         case "STREAMERMODE": {
             debugLog(`Streamer mode changed: ${message.data}`);
+            mainWin?.webContents.send(IpcEvents.STREAMER_MODE_DETECTED, message.data);
             break;
         }
     }
@@ -342,7 +345,7 @@ function processStderrData(data: string) {
 }
 
 export async function initArRPC() {
-    if (!Settings.store.arRPC) {
+    if (Settings.store.arRPCDisabled || !Settings.store.arRPC) {
         debugLog("arRPC is disabled in settings, destroying if running");
         await destroyArRPC();
         restartCount = 0;
@@ -463,6 +466,7 @@ export function setupArRPC() {
         }
     };
 
+    Settings.addChangeListener("arRPCDisabled", mainSettingsListener);
     Settings.addChangeListener("arRPC", mainSettingsListener);
     Settings.addChangeListener("arRPCDebug", configSettingsListener);
     Settings.addChangeListener("arRPCProcessScanning", configSettingsListener);
@@ -472,6 +476,7 @@ export function setupArRPC() {
 
 export async function cleanupArRPC() {
     if (mainSettingsListener) {
+        Settings.removeChangeListener("arRPCDisabled", mainSettingsListener);
         Settings.removeChangeListener("arRPC", mainSettingsListener);
         mainSettingsListener = null;
     }

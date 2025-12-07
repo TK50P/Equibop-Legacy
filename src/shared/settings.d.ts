@@ -20,6 +20,7 @@ export interface Settings {
     hardwareAcceleration?: boolean;
     hardwareVideoAcceleration?: boolean;
     arRPC?: boolean;
+    arRPCDisabled?: boolean;
     arRPCDebug?: boolean;
     arRPCProcessScanning?: boolean;
     arRPCBridge?: boolean;

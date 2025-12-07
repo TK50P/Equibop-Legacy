@@ -38,6 +38,20 @@ async function handleActivityEvent(e: MessageEvent<any>) {
     const data = JSON.parse(e.data);
 
     const { activity } = data;
+
+    if (data.socketId === "STREAMERMODE" || activity?.application_id === "STREAMERMODE") {
+        if (StreamerModeStore.autoToggle) {
+            const shouldEnable = activity != null;
+            logger.info(`Toggling streamer mode: ${shouldEnable ? "ON" : "OFF"}`);
+            FluxDispatcher.dispatch({
+                type: "STREAMER_MODE_UPDATE",
+                key: "enabled",
+                value: shouldEnable
+            });
+        }
+        return;
+    }
+
     const assets = activity?.assets;
 
     if (assets?.large_image) assets.large_image = await lookupAsset(activity.application_id, assets.large_image);
@@ -115,6 +129,12 @@ function stopWebSocket() {
 async function initArRPCBridge() {
     await onceReady;
 
+    if (Settings.store.arRPCDisabled) {
+        logger.info("arRPC is disabled entirely");
+        stopWebSocket();
+        return;
+    }
+
     const customHost = Settings.store.arRPCWebSocketCustomHost;
     const customPort = Settings.store.arRPCWebSocketCustomPort;
     const hasCustomSettings = !!(customHost || customPort);
@@ -140,6 +160,7 @@ async function initArRPCBridge() {
     connectWebSocket();
 }
 
+Settings.addChangeListener("arRPCDisabled", initArRPCBridge);
 Settings.addChangeListener("arRPC", initArRPCBridge);
 Settings.addChangeListener("arRPCWebSocketCustomHost", initArRPCBridge);
 Settings.addChangeListener("arRPCWebSocketCustomPort", initArRPCBridge);
@@ -154,7 +175,7 @@ initArRPCBridge();
 
 // handle STREAMERMODE separately from regular RPC activities
 VesktopNative.arrpc.onStreamerModeDetected(async jsonData => {
-    if (!Settings.store.arRPC) return;
+    if (Settings.store.arRPCDisabled || !Settings.store.arRPC) return;
 
     try {
         await onceReady;
