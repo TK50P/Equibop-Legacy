@@ -31,6 +31,7 @@ interface FakeData {
     metadata: UserAgentMetadata; // idiotic content for requests idk bro web is annoying
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/User-agent_reduction
 function generateUserAgentString(versionString: string): string {
     const engine = "AppleWebKit/537.36 (KHTML, like Gecko)";
     const browser = `Chrome/${versionString}.0.0.0 Safari/537.36`;
@@ -38,6 +39,7 @@ function generateUserAgentString(versionString: string): string {
     return `Mozilla/5.0 (Windows NT 10.0; Win64; x64) ${engine} ${browser}`;
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Client_hints
 function generateClientHints(chromeVersion: string): UserAgentMetadata {
     const majorVersion = chromeVersion.split(".")[0];
 
@@ -88,10 +90,11 @@ function getFakeData(): FakeData {
 
 export async function spoofGnu(window: BrowserWindow) {
     const data = getFakeData();
-    window.webContents.userAgent = data.userAgent;
 
     const runSpoof = async () => {
         try {
+            // set userAgent each time the spoof is ran as setUserAgentOverride does not change the provisional headers
+            window.webContents.userAgent = data.userAgent;
             if (!window.webContents.debugger.isAttached()) {
                 console.log("debugger not attached, attaching");
                 try {
@@ -113,6 +116,10 @@ export async function spoofGnu(window: BrowserWindow) {
             console.error("An error occured during spoofing:", err);
         }
     };
+
+    window.webContents.debugger.on("detach", (_e, reason) => {
+        console.info(`Debugger detached: ${reason}`);
+    });
 
     // Apparently it doesn't have the spoof on reload?? thanks for noticing that MilkShift :trollface: ((and sorry for somewhat bugging goofcord cuz of the non complete spoof))
     // https://www.electronjs.org/docs/latest/api/web-contents#event-did-navigate
