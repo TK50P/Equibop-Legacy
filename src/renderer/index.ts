@@ -37,7 +37,7 @@ customEntries.push({
 });
 
 customSections.push(() => ({
-    section: "Equibop",
+    section: "EquibopSettings",
     label: "Equibop Settings",
     element: SettingsUi,
     className: "vc-equibop-settings"
