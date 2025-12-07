@@ -22,13 +22,21 @@ import { Settings } from "./settings";
 export { Settings };
 
 import type SettingsPlugin from "@equicord/types/plugins/_core/settings";
+import { VesktopSettingsIcon } from "@equicord/types/components/Icons";
 
 VesktopLogger.log("read if cute :3");
 VesktopLogger.log(`Equibop v${VesktopNative.app.getVersion()}`);
 
-const customSettingsSections = (Vencord.Plugins.plugins.Settings as any as typeof SettingsPlugin).customSections;
+const { customEntries, customSections } = (Vencord.Plugins.plugins.Settings as any as typeof SettingsPlugin);
 
-customSettingsSections.push(() => ({
+customEntries.push({
+    key: "equicord_equibop_settings",
+    title: "Equibop Settings",
+    Component: SettingsUi,
+    Icon: VesktopSettingsIcon
+});
+
+customSections.push(() => ({
     section: "Equibop",
     label: "Equibop Settings",
     element: SettingsUi,
