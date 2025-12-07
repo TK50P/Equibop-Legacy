@@ -120,7 +120,7 @@ export async function spoofGnu(window: BrowserWindow) {
     window.webContents.debugger.on("detach", (_e, reason) => {
         console.info(`Debugger detached: ${reason}`);
     });
-    
+
     // https://www.electronjs.org/docs/latest/api/web-contents#event-did-navigate
     window.webContents.on("did-navigate", async () => {
         console.log("Navigation detected, re-running spoof");
