@@ -6,6 +6,22 @@
 
 import { BrowserWindow } from "electron";
 
+export interface PlatformSpoofInfo {
+    spoofed: boolean;
+    originalPlatform: string;
+    spoofedPlatform: string | null;
+}
+
+let spoofInfo: PlatformSpoofInfo = {
+    spoofed: false,
+    originalPlatform: process.platform,
+    spoofedPlatform: null
+};
+
+export function getPlatformSpoofInfo(): PlatformSpoofInfo {
+    return { ...spoofInfo };
+}
+
 // https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#type-UserAgentBrandVersion
 interface Brand {
     brand: string;
@@ -90,6 +106,12 @@ function getFakeData(): FakeData {
 
 export async function spoofGnu(window: BrowserWindow) {
     const data = getFakeData();
+
+    spoofInfo = {
+        spoofed: true,
+        originalPlatform: process.platform,
+        spoofedPlatform: "win32"
+    };
 
     const runSpoof = async () => {
         try {

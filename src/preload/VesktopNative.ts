@@ -43,7 +43,13 @@ export const VesktopNative = {
         supportsWindowsTransparency: () => sendSync<boolean>(IpcEvents.SUPPORTS_WINDOWS_TRANSPARENCY),
         getEnableHardwareAcceleration: () => sendSync<boolean>(IpcEvents.GET_ENABLE_HARDWARE_ACCELERATION),
         isOutdated: () => invoke<boolean>(IpcEvents.UPDATER_IS_OUTDATED),
-        openUpdater: () => invoke<void>(IpcEvents.UPDATER_OPEN)
+        openUpdater: () => invoke<void>(IpcEvents.UPDATER_OPEN),
+        getPlatformSpoofInfo: () =>
+            sendSync<{
+                spoofed: boolean;
+                originalPlatform: string;
+                spoofedPlatform: string | null;
+            }>(IpcEvents.GET_PLATFORM_SPOOF_INFO)
     },
     autostart: {
         isEnabled: () => sendSync<boolean>(IpcEvents.AUTOSTART_ENABLED),
