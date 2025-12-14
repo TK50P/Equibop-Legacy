@@ -62,7 +62,7 @@ Now, go to `"build"` section and add this line.
 "electronVersion": "37.2.2",
 ```
 > [!NOTE]
-> You must change `x64` to `ia32` if you are targetting to 32Bit.
+> You must change `x64` to `ia32` if you are targetting to 32-Bit.
 
 For Example, if code is like this,
 ```js
