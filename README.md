@@ -158,9 +158,7 @@ Open `package.json` and replace like this.
             "target": [
                 {
                     "target": "default",
-                    "arch": [
-                        "universal"
-                    ]
+                    "arch": "universal"
                 }
             ],
             "category": "public.app-category.social-networking",
@@ -169,8 +167,10 @@ Open `package.json` and replace like this.
                 "NSMicrophoneUsageDescription": "This app needs access to the microphone",
                 "NSCameraUsageDescription": "This app needs access to the camera",
                 "com.apple.security.device.audio-input": true,
-                "com.apple.security.device.camera": true
-            }
+                "com.apple.security.device.camera": true,
+                "CFBundleIconName": "Icon"
+            },
+            "notarize": true
         },
 ```
 Change to like this.
@@ -179,9 +179,7 @@ Change to like this.
             "target": [
                 {
                     "target": "default",
-                    "arch": [
-                        "x64"
-                    ]
+                    "arch": "x64"
                 }
             ],
             "minimumSystemVersion": "10.15.0",
@@ -191,8 +189,10 @@ Change to like this.
                 "NSMicrophoneUsageDescription": "This app needs access to the microphone",
                 "NSCameraUsageDescription": "This app needs access to the camera",
                 "com.apple.security.device.audio-input": true,
-                "com.apple.security.device.camera": true
-            }
+                "com.apple.security.device.camera": true,
+                "CFBundleIconName": "Icon"
+            },
+            "notarize": true
         },
 ```
 
