@@ -52,8 +52,6 @@ interface ActivityEvent {
     activity: Activity | null;
 }
 
-const appCache = new Map<string, RPCApplication>();
-
 async function lookupAsset(applicationId: string, key: string): Promise<string | undefined> {
     try {
         const assets = await ApplicationAssetUtils.fetchAssetIds(applicationId, [key]);
@@ -64,36 +62,49 @@ async function lookupAsset(applicationId: string, key: string): Promise<string |
     }
 }
 
+const APP_CACHE_MAX = 50;
+const appCache = new Map<string, RPCApplication>();
+
 async function lookupApp(applicationId: string): Promise<RPCApplication | undefined> {
     const cached = appCache.get(applicationId);
-    if (cached) return cached;
+    if (cached) {
+        appCache.delete(applicationId);
+        appCache.set(applicationId, cached);
+        return cached;
+    }
 
     try {
         const socket: { application?: RPCApplication } = {};
         await fetchApplicationsRPC(socket, applicationId);
+
         if (socket.application) {
+            if (appCache.size >= APP_CACHE_MAX) {
+                const oldest = appCache.keys().next().value;
+                if (oldest) appCache.delete(oldest);
+            }
             appCache.set(applicationId, socket.application);
             return socket.application;
         }
     } catch (e) {
         logger.warn(`Failed to lookup app ${applicationId}:`, e);
     }
+
     return undefined;
 }
 
 let ws: WebSocket | null = null;
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectTimer: NodeJS.Timeout | null = null;
 let waitingForReady = false;
 
-function clearReconnectTimer() {
-    if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-    }
-}
-
 async function handleActivityEvent(e: MessageEvent<string>) {
-    const data: ActivityEvent = JSON.parse(e.data);
+    let data: ActivityEvent;
+    try {
+        data = JSON.parse(e.data);
+    } catch {
+        logger.error("Failed to parse activity event:", e.data);
+        return;
+    }
+
     const { activity } = data;
 
     if (data.socketId === "STREAMERMODE" || activity?.application_id === "STREAMERMODE") {
@@ -109,100 +120,75 @@ async function handleActivityEvent(e: MessageEvent<string>) {
         return;
     }
 
-    if (activity?.assets) {
-        const [largeImage, smallImage] = await Promise.all([
-            activity.assets.large_image
-                ? lookupAsset(activity.application_id, activity.assets.large_image)
-                : undefined,
-            activity.assets.small_image
-                ? lookupAsset(activity.application_id, activity.assets.small_image)
-                : undefined
-        ]);
-
-        if (largeImage) activity.assets.large_image = largeImage;
-        if (smallImage) activity.assets.small_image = smallImage;
-    }
-
     if (activity) {
+        const assets = activity.assets;
+        if (assets?.large_image) assets.large_image = await lookupAsset(activity.application_id, assets.large_image);
+        if (assets?.small_image) assets.small_image = await lookupAsset(activity.application_id, assets.small_image);
+
         const app = await lookupApp(activity.application_id);
-        if (app && !activity.name) {
-            activity.name = app.name;
-        }
+        if (app) activity.name ||= app.name;
     }
 
     FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", ...data });
 }
 
-function getConnectionParams(): { host: string; port: number; isCustom: boolean } {
-    const status = VesktopNative.arrpc.getStatus();
+function connectWebSocket() {
+    const arrpcStatus = VesktopNative.arrpc.getStatus();
     const customHost = Settings.store.arRPCWebSocketCustomHost;
     const customPort = Settings.store.arRPCWebSocketCustomPort;
 
-    return {
-        host: customHost || status.host || "127.0.0.1",
-        port: customPort || status.port || 1337,
-        isCustom: !!(customHost || customPort)
-    };
-}
+    const host = customHost || arrpcStatus.host || "127.0.0.1";
+    const port = customPort || arrpcStatus.port || 1337;
 
-function connectWebSocket() {
-    const { host, port, isCustom } = getConnectionParams();
     const wsUrl = `ws://${host}:${port}`;
-
+    const isCustom = customHost || customPort;
     logger.info(`Connecting to arRPC at ${wsUrl}${isCustom ? " (custom)" : ""}`);
 
-    if (ws) {
-        ws.onclose = null;
-        ws.close();
-    }
-
+    if (ws) ws.close();
     ws = new WebSocket(wsUrl);
 
     ws.onmessage = handleActivityEvent;
 
-    ws.onerror = () => {
-        logger.error("WebSocket connection error");
+    ws.onerror = err => {
+        logger.error("WebSocket connection error:", err);
     };
 
     ws.onclose = () => {
-        ws = null;
+        const autoReconnect = Settings.store.arRPCWebSocketAutoReconnect ?? true;
+        const reconnectInterval = Settings.store.arRPCWebSocketReconnectInterval || 5000;
+
+        logger.info(`WebSocket closed${autoReconnect ? `, will attempt reconnect in ${reconnectInterval}ms` : ""}`);
         FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", activity: null });
 
-        const autoReconnect = Settings.store.arRPCWebSocketAutoReconnect ?? true;
-        if (!autoReconnect) {
-            logger.info("WebSocket closed, auto-reconnect disabled");
-            return;
-        }
+        if (reconnectTimer) clearTimeout(reconnectTimer);
 
-        const interval = Settings.store.arRPCWebSocketReconnectInterval || 5000;
-        logger.info(`WebSocket closed, reconnecting in ${interval}ms`);
-
-        clearReconnectTimer();
-        reconnectTimer = setTimeout(() => {
-            if (shouldConnect()) {
+        if (autoReconnect) {
+            reconnectTimer = setTimeout(() => {
+                logger.info("Attempting to reconnect...");
                 connectWebSocket();
-            }
-        }, interval);
+            }, reconnectInterval);
+        }
     };
 
     ws.onopen = () => {
-        logger.info("Connected to arRPC");
-        clearReconnectTimer();
+        logger.info("Successfully connected to arRPCBun");
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
     };
 }
 
 function stopWebSocket() {
-    clearReconnectTimer();
-    waitingForReady = false;
-
-    if (ws) {
-        ws.onclose = null;
-        ws.close();
-        ws = null;
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
     }
-
+    waitingForReady = false;
     FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", activity: null });
-    logger.info("Stopped arRPC connection");
+    ws?.close();
+    ws = null;
+    logger.info("Stopped arRPCBun connection");
 }
 
 function shouldConnect(): boolean {
@@ -218,17 +204,26 @@ function shouldConnect(): boolean {
     return status.enabled || status.running;
 }
 
-function waitForArRPCReady(): Promise<void> {
+const ARRPC_READY_TIMEOUT = 15000;
+
+function waitForArRPCReady(): Promise<boolean> {
     return new Promise(resolve => {
         const status = VesktopNative.arrpc.getStatus();
         if (status.isReady && status.port) {
-            resolve();
+            resolve(true);
             return;
         }
 
-        const onReady = () => {
+        const timeout = setTimeout(() => {
             VesktopNative.arrpc.offReady(onReady);
-            resolve();
+            logger.warn("Timed out waiting for arRPC to become ready");
+            resolve(false);
+        }, ARRPC_READY_TIMEOUT);
+
+        const onReady = () => {
+            clearTimeout(timeout);
+            VesktopNative.arrpc.offReady(onReady);
+            resolve(true);
         };
 
         VesktopNative.arrpc.onReady(onReady);
@@ -246,8 +241,9 @@ async function initArRPCBridge() {
 
     const customHost = Settings.store.arRPCWebSocketCustomHost;
     const customPort = Settings.store.arRPCWebSocketCustomPort;
+    const hasCustomSettings = !!(customHost || customPort);
 
-    if (customHost || customPort) {
+    if (hasCustomSettings) {
         connectWebSocket();
         return;
     }
@@ -257,15 +253,15 @@ async function initArRPCBridge() {
         return;
     }
 
-    const status = VesktopNative.arrpc.getStatus();
+    const arrpcStatus = VesktopNative.arrpc.getStatus();
 
-    if (!status.enabled) {
-        logger.warn("arRPC is not enabled in settings");
+    if (!arrpcStatus.enabled && !arrpcStatus.running) {
+        logger.warn("Equibop built-in arRPC is disabled and not running");
         stopWebSocket();
         return;
     }
 
-    if (status.isReady && status.port) {
+    if (arrpcStatus.isReady && arrpcStatus.port) {
         connectWebSocket();
         return;
     }
@@ -275,10 +271,10 @@ async function initArRPCBridge() {
     waitingForReady = true;
     logger.info("Waiting for arRPC to become ready...");
 
-    await waitForArRPCReady();
+    const ready = await waitForArRPCReady();
     waitingForReady = false;
 
-    if (shouldConnect()) {
+    if (ready && shouldConnect()) {
         connectWebSocket();
     }
 }
@@ -288,8 +284,9 @@ Settings.addChangeListener("arRPC", initArRPCBridge);
 Settings.addChangeListener("arRPCWebSocketCustomHost", initArRPCBridge);
 Settings.addChangeListener("arRPCWebSocketCustomPort", initArRPCBridge);
 Settings.addChangeListener("arRPCWebSocketAutoReconnect", () => {
-    if (!Settings.store.arRPCWebSocketAutoReconnect) {
-        clearReconnectTimer();
+    if (!Settings.store.arRPCWebSocketAutoReconnect && reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
     }
 });
 
@@ -304,18 +301,23 @@ VesktopNative.arrpc.onReady(() => {
 
 initArRPCBridge();
 
+// handle STREAMERMODE separately from regular RPC activities
 VesktopNative.arrpc.onStreamerModeDetected(async jsonData => {
     if (Settings.store.arRPCDisabled || !Settings.store.arRPC) return;
 
     try {
         await onceReady;
 
-        const data: ActivityEvent = JSON.parse(jsonData);
+        const data = JSON.parse(jsonData);
         if (Settings.store.arRPCDebug) {
             logger.info("STREAMERMODE detected:", data);
+            logger.info("StreamerModeStore.autoToggle:", StreamerModeStore.autoToggle);
         }
 
         if (data.socketId === "STREAMERMODE" && StreamerModeStore.autoToggle) {
+            if (Settings.store.arRPCDebug) {
+                logger.info("Toggling streamer mode to:", data.activity?.application_id === "STREAMERMODE");
+            }
             FluxDispatcher.dispatch({
                 type: "STREAMER_MODE_UPDATE",
                 key: "enabled",
@@ -346,11 +348,12 @@ onIpcCommand(IpcCommands.RPC_INVITE, async code => {
 const { DEEP_LINK } = findLazy(m => m.DEEP_LINK?.handler);
 
 onIpcCommand(IpcCommands.RPC_DEEP_LINK, async data => {
+    logger.debug("Opening deep link:", data);
     try {
         DEEP_LINK.handler({ args: data });
         return true;
-    } catch (e) {
-        logger.error("Failed to open deep link:", e);
+    } catch (err) {
+        logger.error("Failed to open deep link:", err);
         return false;
     }
 });
