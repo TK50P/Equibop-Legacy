@@ -7,8 +7,7 @@
 import "./settings.css";
 
 import { classNameFactory } from "@equicord/types/api/Styles";
-import { Divider, SettingsTab, wrapTab } from "@equicord/types/components";
-import { Text } from "@equicord/types/webpack/common";
+import { BaseText, Divider, ErrorBoundary } from "@equicord/types/components";
 import { ComponentType } from "react";
 import { Settings, useSettings } from "renderer/settings";
 import { isMac, isWindows } from "renderer/utils";
@@ -19,6 +18,7 @@ import { AutoStartToggle } from "./AutoStartToggle";
 import { DeveloperOptionsButton } from "./DeveloperOptions";
 import { DiscordBranchPicker } from "./DiscordBranchPicker";
 import { NotificationBadgeToggle } from "./NotificationBadgeToggle";
+import { OutdatedVesktopWarning } from "./OutdatedVesktopWarning";
 import { Updater } from "./Updater";
 import { UserAssetsButton } from "./UserAssets";
 import { VesktopSettingsSwitch } from "./VesktopSettingsSwitch";
@@ -118,7 +118,7 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
         {
             key: "clickTrayToShowHide",
             title: "Hide/Show on tray click",
-            description: "Left clicking tray icon will toggle the equibop window visibility.",
+            description: "Left clicking tray icon will toggle the Equibop window visibility.",
             defaultValue: false
         },
         {
@@ -134,7 +134,15 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             defaultValue: false
         }
     ],
-    Notifications: [NotificationBadgeToggle],
+    Notifications: [
+        NotificationBadgeToggle,
+        {
+            key: "enableTaskbarFlashing",
+            title: "Enable Taskbar Flashing",
+            description: "Flashes the app in your taskbar when you have new notifications.",
+            defaultValue: false
+        }
+    ],
     "Rich Presence (arRPC)": [
         {
             key: "arRPCDisabled",
@@ -190,7 +198,7 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
         {
             key: "openLinksWithElectron",
             title: "Open Links in app (experimental)",
-            description: "Opens links in a new equibop window instead of your web browser",
+            description: "Opens links in a new Equibop window instead of your web browser",
             defaultValue: false
         }
     ],
@@ -202,9 +210,9 @@ function SettingsSections() {
 
     const sections = Object.entries(SettingsOptions).map(([title, settings], i, arr) => (
         <div key={title} className={cl("category")}>
-            <Text variant="heading-lg/semibold" color="header-primary" className={cl("category-title")}>
+            <BaseText size="lg" weight="semibold" tag="h3" className={cl("category-title")}>
                 {title}
-            </Text>
+            </BaseText>
 
             <div className={cl("category-content")}>
                 {settings.map((Setting, i) => {
@@ -233,13 +241,18 @@ function SettingsSections() {
     return <>{sections}</>;
 }
 
-function SettingsUI() {
-    return (
-        <SettingsTab>
-            <Updater />
-            <SettingsSections />
-        </SettingsTab>
-    );
-}
-
-export default wrapTab(SettingsUI, "Equibop Settings");
+export default ErrorBoundary.wrap(
+    function SettingsUI() {
+        return (
+            <section>
+                <Updater />
+                <OutdatedVesktopWarning />
+                <SettingsSections />
+            </section>
+        );
+    },
+    {
+        message:
+            "Failed to render the Equibop Settings tab. If this issue persists, try to right click the Equibop tray icon, then click 'Repair Equicord'. And make sure your Equibop is up to date."
+    }
+);

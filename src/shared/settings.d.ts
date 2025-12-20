@@ -33,6 +33,7 @@ export interface Settings {
     arRPCWebSocketCustomPort?: number;
     appBadge?: boolean;
     badgeOnlyForMentions?: boolean;
+    enableTaskbarFlashing?: boolean;
     disableMinSize?: boolean;
     clickTrayToShowHide?: boolean;
     customTitleBar?: boolean;
