@@ -298,7 +298,7 @@ VesktopNative.arrpc.onReady(() => {
     if (ws) return;
     if (!shouldConnect()) return;
 
-    logger.info("arRPC became ready, connecting...");
+    logger.info("arRPC is now ready, connecting");
     connectWebSocket();
 });
 
