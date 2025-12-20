@@ -51,10 +51,6 @@ export async function createSplashWindow(startMinimized = false) {
         splash.webContents.insertCSS(`img { image-rendering: pixelated; }`);
     }
 
-    if (splashPixelated) {
-        splash.webContents.insertCSS(`img { image-rendering: pixelated; }`);
-    }
-
     const customSplashPath = join(DATA_DIR, "userAssets", "splash");
     const hasCustomSplash = await fileExistsAsync(customSplashPath);
 
