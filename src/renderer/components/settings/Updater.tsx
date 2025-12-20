@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+import { Button, HeadingTertiary, Paragraph } from "@equicord/types/components";
 import { useAwaiter } from "@equicord/types/utils";
-import { Button, Text } from "@equicord/types/webpack/common";
 
 import { cl } from "./Settings";
 
@@ -16,14 +16,10 @@ export function Updater() {
 
     return (
         <div className={cl("updater-card")}>
-            <Text variant="text-md/semibold">Your Vesktop is outdated!</Text>
-            <Text variant="text-sm/normal">Staying up to date is important for security and stability.</Text>
+            <HeadingTertiary>Your Equibop is outdated!</HeadingTertiary>
+            <Paragraph>Staying up to date is important for security and stability.</Paragraph>
 
-            <Button
-                onClick={() => VesktopNative.app.openUpdater()}
-                size={Button.Sizes.SMALL}
-                color={Button.Colors.TRANSPARENT}
-            >
+            <Button onClick={() => VesktopNative.app.openUpdater()} variant="secondary">
                 Open Updater
             </Button>
         </div>

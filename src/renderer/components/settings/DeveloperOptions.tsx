@@ -78,7 +78,7 @@ const EquicordLocationPicker: SettingsComponent = ({ settings }) => {
             </Paragraph>
             <div className={cl("button-grid")}>
                 <Button
-                    size={Button.Sizes.SMALL}
+                    size={"small"}
                     onClick={async () => {
                         const choice = await VesktopNative.fileManager.selectEquicordDir();
                         switch (choice) {
@@ -106,7 +106,7 @@ const EquicordLocationPicker: SettingsComponent = ({ settings }) => {
                     Change
                 </Button>
                 <Button
-                    size={Button.Sizes.SMALL}
+                    size={"small"}
                     variant="dangerPrimary"
                     onClick={async () => {
                         await VesktopNative.fileManager.selectEquicordDir(null);
