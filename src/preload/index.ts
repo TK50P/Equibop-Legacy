@@ -36,7 +36,8 @@ if (IS_DEV) {
     // persistent means keep process running if watcher is the only thing still running
     // which we obviously don't want
     watch(rendererCss, { persistent: false }, () => {
-        document.getElementById("vcd-css-core")!.textContent = readFileSync(rendererCss, "utf-8");
+        const styleEl = document.getElementById("vcd-css-core");
+        if (styleEl) styleEl.textContent = readFileSync(rendererCss, "utf-8");
     });
 }
 // #endregion
