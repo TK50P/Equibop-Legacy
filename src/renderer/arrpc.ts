@@ -121,7 +121,7 @@ async function handleActivityEvent(e: MessageEvent<string>) {
     }
 
     if (activity) {
-        const { assets } = activity;
+        const assets = activity.assets;
         if (assets?.large_image) assets.large_image = await lookupAsset(activity.application_id, assets.large_image);
         if (assets?.small_image) assets.small_image = await lookupAsset(activity.application_id, assets.small_image);
 

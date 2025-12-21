@@ -1,6 +1,6 @@
 /*
  * Vesktop, a desktop app aiming to give you a snappier Discord Experience
- * Copyright (c) 2025 Vendicated and Vesktop contributors
+ * Copyright (c) 2023 Vendicated and Vencord contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -34,8 +34,8 @@ ipcRenderer.on(IpcEvents.ARRPC_READY, () => {
     arrpcReadyCallbacks.forEach(cb => cb());
 });
 
-let onDevtoolsOpen = () => {};
-let onDevtoolsClose = () => {};
+let onDevtoolsOpen = () => { };
+let onDevtoolsClose = () => { };
 
 ipcRenderer.on(IpcEvents.DEVTOOLS_OPENED, () => onDevtoolsOpen());
 ipcRenderer.on(IpcEvents.DEVTOOLS_CLOSED, () => onDevtoolsClose());

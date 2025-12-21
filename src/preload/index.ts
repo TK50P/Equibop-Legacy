@@ -1,6 +1,6 @@
 /*
  * Vesktop, a desktop app aiming to give you a snappier Discord Experience
- * Copyright (c) 2025 Vendicated and Vesktop contributors
+ * Copyright (c) 2023 Vendicated and Vencord contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -36,8 +36,7 @@ if (IS_DEV) {
     // persistent means keep process running if watcher is the only thing still running
     // which we obviously don't want
     watch(rendererCss, { persistent: false }, () => {
-        const styleEl = document.getElementById("vcd-css-core");
-        if (styleEl) styleEl.textContent = readFileSync(rendererCss, "utf-8");
+        document.getElementById("vcd-css-core")!.textContent = readFileSync(rendererCss, "utf-8");
     });
 }
 // #endregion
