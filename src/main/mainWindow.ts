@@ -336,7 +336,7 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
         ...(process.platform === "win32" && { icon: join(STATIC_DIR, "icon.ico") }),
         webPreferences: {
             nodeIntegration: false,
-            sandbox: false, // TODO
+            sandbox: true,
             contextIsolation: true,
             devTools: true,
             preload: join(__dirname, "preload.js"),

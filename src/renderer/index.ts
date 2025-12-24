@@ -45,3 +45,13 @@ customSections.push(() => ({
 
 VesktopNative.voice.onToggleSelfMute(() => VoiceActions.toggleSelfMute());
 VesktopNative.voice.onToggleSelfDeaf(() => VoiceActions.toggleSelfDeaf());
+
+// TODO: remove this legacy workaround once some time has passed
+if (!Vencord.Api.Styles.vencordRootNode) {
+    const style = document.createElement("style");
+    style.id = "vesktop-css-core";
+
+    VesktopNative.app.getRendererCss().then(css => (style.textContent = css));
+
+    document.addEventListener("DOMContentLoaded", () => document.documentElement.append(style), { once: true });
+}

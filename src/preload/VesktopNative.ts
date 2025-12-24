@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { Node } from "@vencord/venmic";
-import { ipcRenderer } from "electron";
-import { IpcMessage, IpcResponse } from "main/ipcCommands";
+import type { Node } from "@vencord/venmic";
+import { ipcRenderer } from "electron/renderer";
+import type { IpcMessage, IpcResponse } from "main/ipcCommands";
 import type { Settings } from "shared/settings";
 
 import { IpcEvents } from "../shared/IpcEvents";
@@ -56,7 +56,13 @@ export const VesktopNative = {
                 spoofed: boolean;
                 originalPlatform: string;
                 spoofedPlatform: string | null;
-            }>(IpcEvents.GET_PLATFORM_SPOOF_INFO)
+            }>(IpcEvents.GET_PLATFORM_SPOOF_INFO),
+        getRendererCss: () => invoke<string>(IpcEvents.GET_VESKTOP_RENDERER_CSS),
+        onRendererCssUpdate: (cb: (newCss: string) => void) => {
+            if (!IS_DEV) return;
+
+            ipcRenderer.on(IpcEvents.VESKTOP_RENDERER_CSS_UPDATE, (_e, newCss: string) => cb(newCss));
+        }
     },
     autostart: {
         isEnabled: () => sendSync<boolean>(IpcEvents.AUTOSTART_ENABLED),
