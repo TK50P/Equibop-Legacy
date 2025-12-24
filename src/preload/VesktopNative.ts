@@ -34,8 +34,8 @@ ipcRenderer.on(IpcEvents.ARRPC_READY, () => {
     arrpcReadyCallbacks.forEach(cb => cb());
 });
 
-let onDevtoolsOpen = () => { };
-let onDevtoolsClose = () => { };
+let onDevtoolsOpen = () => {};
+let onDevtoolsClose = () => {};
 
 ipcRenderer.on(IpcEvents.DEVTOOLS_OPENED, () => onDevtoolsOpen());
 ipcRenderer.on(IpcEvents.DEVTOOLS_CLOSED, () => onDevtoolsClose());
