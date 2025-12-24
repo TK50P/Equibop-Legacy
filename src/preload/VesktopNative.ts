@@ -27,8 +27,15 @@ ipcRenderer.on(IpcEvents.STREAMER_MODE_DETECTED, (_, data: string) => {
     streamerModeCallbacks.forEach(cb => cb(data));
 });
 
-let onDevtoolsOpen = () => {};
-let onDevtoolsClose = () => {};
+type ArRPCReadyCallback = () => void;
+const arrpcReadyCallbacks = new Set<ArRPCReadyCallback>();
+
+ipcRenderer.on(IpcEvents.ARRPC_READY, () => {
+    arrpcReadyCallbacks.forEach(cb => cb());
+});
+
+let onDevtoolsOpen = () => { };
+let onDevtoolsClose = () => { };
 
 ipcRenderer.on(IpcEvents.DEVTOOLS_OPENED, () => onDevtoolsOpen());
 ipcRenderer.on(IpcEvents.DEVTOOLS_CLOSED, () => onDevtoolsClose());
@@ -91,6 +98,12 @@ export const VesktopNative = {
         },
         offStreamerModeDetected(cb: StreamerModeCallback) {
             streamerModeCallbacks.delete(cb);
+        },
+        onReady(cb: ArRPCReadyCallback) {
+            arrpcReadyCallbacks.add(cb);
+        },
+        offReady(cb: ArRPCReadyCallback) {
+            arrpcReadyCallbacks.delete(cb);
         },
         getStatus: () =>
             sendSync<{

@@ -302,6 +302,7 @@ function handleArRPCMessage(message: ArRPCMessage) {
             readyTime = Date.now();
             clearInitTimeout();
             debugLog(`arRPC ready, version: ${message.data.version}`);
+            mainWin?.webContents.send(IpcEvents.ARRPC_READY);
             break;
         }
 
