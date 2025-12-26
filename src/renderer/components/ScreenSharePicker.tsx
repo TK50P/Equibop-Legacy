@@ -180,7 +180,7 @@ export function openScreenSharePicker(screens: Source[], skipPicker: boolean) {
                     reject("Aborted");
                 },
                 onCloseCallback() {
-                    reject("Aborted");
+                    if (!didSubmit) reject("Aborted");
                 }
             }
         );
