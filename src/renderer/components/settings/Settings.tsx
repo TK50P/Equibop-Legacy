@@ -13,7 +13,7 @@ import { Settings, useSettings } from "renderer/settings";
 import { isMac, isWindows } from "renderer/utils";
 
 import { Arguments } from "./Arguments";
-import { ArRPCWebSocketSettings } from "./ArRPCWebSocketSettings";
+import { ArRPCSettingsButton } from "./ArRPCSettings";
 import { AutoStartToggle } from "./AutoStartToggle";
 import { DeveloperOptionsButton } from "./DeveloperOptions";
 import { DiscordBranchPicker } from "./DiscordBranchPicker";
@@ -143,51 +143,7 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             defaultValue: false
         }
     ],
-    "Rich Presence (arRPC)": [
-        {
-            key: "arRPCDisabled",
-            title: "Disable Rich Presence Entirely",
-            description: "Completely disable arRPC - no integrated server, no WebSocket connection, no Rich Presence",
-            defaultValue: false
-        },
-        {
-            key: "arRPC",
-            title: "Enable Integrated arRPC",
-            description:
-                "Enable the integrated arRPC server (process scanning and IPC). Disable this if using only external arRPC.",
-            defaultValue: false,
-            disabled: () => Settings.store.arRPCDisabled === true
-        },
-        {
-            key: "arRPCProcessScanning",
-            title: "Process Scanning",
-            description: "Enables automatic game/application detection for Rich Presence",
-            defaultValue: true,
-            disabled: () => Settings.store.arRPCDisabled === true || Settings.store.arRPC === false
-        },
-        {
-            key: "arRPCBridge",
-            title: "Bridge Server",
-            description: "Enables the WebSocket bridge server for web clients",
-            defaultValue: true,
-            disabled: () => Settings.store.arRPCDisabled === true || Settings.store.arRPC === false
-        },
-        {
-            key: "arRPCDebug",
-            title: "Debug Logging",
-            description: "Enables detailed debug logging (bun path detection, process spawning, IPC messages, etc.)",
-            defaultValue: false,
-            disabled: () => Settings.store.arRPCDisabled === true || Settings.store.arRPC === false
-        },
-        ArRPCWebSocketSettings,
-        {
-            key: "arRPCWebSocketAutoReconnect",
-            title: "Auto Reconnect",
-            description: "Automatically reconnect to arRPC WebSocket when connection is lost",
-            defaultValue: true,
-            disabled: () => Settings.store.arRPCDisabled === true
-        }
-    ],
+    "Rich Presence": [ArRPCSettingsButton],
     Miscellaneous: [
         {
             key: "middleClickAutoscroll",

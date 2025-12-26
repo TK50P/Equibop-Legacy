@@ -95,6 +95,7 @@ async function lookupApp(applicationId: string): Promise<RPCApplication | undefi
 let ws: WebSocket | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
 let waitingForReady = false;
+let intentionalClose = false;
 
 async function handleActivityEvent(e: MessageEvent<string>) {
     let data: ActivityEvent;
@@ -144,7 +145,10 @@ function connectWebSocket() {
     const isCustom = customHost || customPort;
     logger.info(`Connecting to arRPC at ${wsUrl}${isCustom ? " (custom)" : ""}`);
 
-    if (ws) ws.close();
+    if (ws) {
+        intentionalClose = true;
+        ws.close();
+    }
     ws = new WebSocket(wsUrl);
 
     ws.onmessage = handleActivityEvent;
@@ -154,6 +158,11 @@ function connectWebSocket() {
     };
 
     ws.onclose = () => {
+        if (intentionalClose) {
+            intentionalClose = false;
+            return;
+        }
+
         const autoReconnect = Settings.store.arRPCWebSocketAutoReconnect ?? true;
         const reconnectInterval = Settings.store.arRPCWebSocketReconnectInterval || 5000;
 
@@ -186,8 +195,11 @@ function stopWebSocket() {
     }
     waitingForReady = false;
     FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", activity: null });
-    ws?.close();
-    ws = null;
+    if (ws) {
+        intentionalClose = true;
+        ws.close();
+        ws = null;
+    }
     logger.info("Stopped arRPCBun connection");
 }
 
@@ -301,7 +313,6 @@ VesktopNative.arrpc.onReady(() => {
 
 initArRPCBridge();
 
-// handle STREAMERMODE separately from regular RPC activities
 VesktopNative.arrpc.onStreamerModeDetected(async jsonData => {
     if (Settings.store.arRPCDisabled || !Settings.store.arRPC) return;
 

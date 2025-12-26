@@ -6,7 +6,8 @@
 
 import { ChildProcess, spawn } from "child_process";
 import { app } from "electron";
-import { accessSync, constants, existsSync, statSync } from "fs";
+import { accessSync, constants, existsSync, FSWatcher, readFileSync, statSync, watch } from "fs";
+import { tmpdir } from "os";
 import { join } from "path";
 import { IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
@@ -14,47 +15,24 @@ import { STATIC_DIR } from "shared/paths";
 import { mainWin } from "../mainWindow";
 import { Settings } from "../settings";
 
-interface ArRPCStreamerModeMessage {
-    type: "STREAMERMODE";
-    data: string;
-}
+const STATE_FILE_PREFIX = "arrpc-state";
+const STATE_FILE_MAX_INDEX = 9;
 
-interface ArRPCServerInfoMessage {
-    type: "SERVER_INFO";
-    data: {
-        port?: number;
-        host?: string;
-        socketPath?: string;
-        service?: string;
+interface StateFileContent {
+    appVersion: string;
+    timestamp: number;
+    servers: {
+        bridge?: { port: number; host: string };
+        websocket?: { port: number; host: string };
+        ipc?: { socketPath: string };
     };
-}
-
-interface ArRPCReadyMessage {
-    type: "READY";
-    data: {
-        version: string;
-    };
-}
-
-interface ArRPCHeartbeatMessage {
-    type: "HEARTBEAT";
-    data: {
-        timestamp: number;
-    };
-}
-
-type ArRPCMessage = ArRPCStreamerModeMessage | ArRPCServerInfoMessage | ArRPCReadyMessage | ArRPCHeartbeatMessage;
-
-function isArRPCMessage(message: unknown): message is ArRPCMessage {
-    return (
-        typeof message === "object" &&
-        message !== null &&
-        "type" in message &&
-        (message.type === "STREAMERMODE" ||
-            message.type === "SERVER_INFO" ||
-            message.type === "READY" ||
-            message.type === "HEARTBEAT")
-    );
+    activities: Array<{
+        socketId: string;
+        name: string;
+        applicationId: string;
+        pid: number;
+        startTime: number | null;
+    }>;
 }
 
 function debugLog(...args: any[]) {
@@ -163,18 +141,183 @@ let binaryPath: string | null = null;
 let isReady: boolean = false;
 let mainSettingsListener: (() => void) | null = null;
 let configSettingsListener: (() => void) | null = null;
-let stderrBuffer: string = "";
 let initTimeout: NodeJS.Timeout | null = null;
 let isDestroying: boolean = false;
-let lastHeartbeat: number | null = null;
+let stateFileWatcher: FSWatcher | null = null;
+let stateFilePath: string | null = null;
+let stateCheckInterval: NodeJS.Timeout | null = null;
+let appVersion: string | null = null;
 
 const INIT_TIMEOUT_MS = 10000;
 const PROCESS_KILL_TIMEOUT_MS = 5000;
+const STATE_CHECK_INTERVAL_MS = 500;
+const STATE_FILE_STALE_MS = 60000;
+
+function findStateFile(): string | null {
+    const tempDir = tmpdir();
+
+    for (let i = 0; i <= STATE_FILE_MAX_INDEX; i++) {
+        const path = join(tempDir, `${STATE_FILE_PREFIX}-${i}`);
+        if (existsSync(path)) {
+            try {
+                const content = JSON.parse(readFileSync(path, "utf-8")) as StateFileContent;
+                const age = Date.now() - content.timestamp;
+                if (age < STATE_FILE_STALE_MS) {
+                    return path;
+                }
+            } catch {
+                continue;
+            }
+        }
+    }
+
+    if (arrpcProcess?.pid) {
+        const pidPath = join(tempDir, `${STATE_FILE_PREFIX}-${arrpcProcess.pid}`);
+        if (existsSync(pidPath)) {
+            return pidPath;
+        }
+    }
+
+    return null;
+}
+
+function readStateFile(): StateFileContent | null {
+    const path = stateFilePath || findStateFile();
+    if (!path) return null;
+
+    try {
+        const content = JSON.parse(readFileSync(path, "utf-8")) as StateFileContent;
+        const age = Date.now() - content.timestamp;
+        if (age > STATE_FILE_STALE_MS) {
+            debugLog(`State file is stale (${age}ms old)`);
+            return null;
+        }
+        return content;
+    } catch (e) {
+        debugLog(`Failed to read state file: ${e}`);
+        return null;
+    }
+}
+
+function handleStateUpdate(state: StateFileContent) {
+    if (state.servers.bridge) {
+        serverPort = state.servers.bridge.port;
+        serverHost = state.servers.bridge.host;
+        debugLog(`State file bridge info: ${serverHost}:${serverPort}`);
+    }
+
+    if (state.appVersion && state.appVersion !== "unknown") {
+        appVersion = state.appVersion;
+    }
+
+    if (!isReady && state.timestamp) {
+        isReady = true;
+        readyTime = Date.now();
+        clearInitTimeout();
+        debugLog(`arRPC ready (from state file), version: ${state.appVersion}`);
+        mainWin?.webContents.send(IpcEvents.ARRPC_READY);
+    }
+}
+
+function startStateFileWatching() {
+    stopStateFileWatching();
+
+    stateCheckInterval = setInterval(() => {
+        const path = findStateFile();
+        if (path) {
+            stateFilePath = path;
+            debugLog(`Found state file: ${path}`);
+
+            const state = readStateFile();
+            if (state) {
+                handleStateUpdate(state);
+            }
+
+            try {
+                stateFileWatcher = watch(path, { persistent: false }, () => {
+                    const updatedState = readStateFile();
+                    if (updatedState) {
+                        handleStateUpdate(updatedState);
+                    }
+                });
+                debugLog(`Watching state file: ${path}`);
+
+                if (stateCheckInterval) {
+                    clearInterval(stateCheckInterval);
+                    stateCheckInterval = null;
+                }
+            } catch (e) {
+                debugLog(`Failed to watch state file, continuing to poll: ${e}`);
+            }
+        }
+    }, STATE_CHECK_INTERVAL_MS);
+}
+
+function stopStateFileWatching() {
+    if (stateFileWatcher) {
+        stateFileWatcher.close();
+        stateFileWatcher = null;
+    }
+    if (stateCheckInterval) {
+        clearInterval(stateCheckInterval);
+        stateCheckInterval = null;
+    }
+    stateFilePath = null;
+}
+
+interface StateFileResult {
+    content: StateFileContent | null;
+    stale: boolean;
+}
+
+function findAnyStateFile(): StateFileResult {
+    const tempDir = tmpdir();
+
+    for (let i = 0; i <= STATE_FILE_MAX_INDEX; i++) {
+        const path = join(tempDir, `${STATE_FILE_PREFIX}-${i}`);
+        if (existsSync(path)) {
+            try {
+                const content = JSON.parse(readFileSync(path, "utf-8")) as StateFileContent;
+                const age = Date.now() - content.timestamp;
+                return { content, stale: age >= STATE_FILE_STALE_MS };
+            } catch {
+                continue;
+            }
+        }
+    }
+    return { content: null, stale: false };
+}
 
 export function getArRPCStatus() {
     const proc = arrpcProcess;
     const pid = proc?.pid ?? null;
     const running = proc != null && !proc.killed && pid != null;
+
+    const integratedState = readStateFile();
+    const externalResult = !running ? findAnyStateFile() : { content: null, stale: false };
+    const state = integratedState || externalResult.content;
+    const isStale = !integratedState && externalResult.stale;
+
+    if (state) {
+        const isExternal = !running && state !== null;
+        return {
+            running: running || isExternal,
+            pid,
+            port: state.servers.bridge?.port ?? serverPort,
+            host: state.servers.bridge?.host ?? serverHost,
+            enabled: Settings.store.arRPC ?? false,
+            lastError,
+            lastExitCode,
+            uptime: startTime ? Date.now() - startTime : null,
+            readyTime: readyTime ? Date.now() - readyTime : null,
+            restartCount,
+            binaryPath,
+            isReady: isReady || (isExternal && !isStale),
+            isStale,
+            appVersion: state.appVersion,
+            activities: state.activities.length
+        };
+    }
 
     return {
         running,
@@ -189,7 +332,9 @@ export function getArRPCStatus() {
         restartCount,
         binaryPath,
         isReady,
-        lastHeartbeat: lastHeartbeat ? Date.now() - lastHeartbeat : null
+        isStale: false,
+        appVersion,
+        activities: 0
     };
 }
 
@@ -207,6 +352,7 @@ export async function destroyArRPC(): Promise<void> {
     debugLog("Destroying arRPC process");
 
     clearInitTimeout();
+    stopStateFileWatching();
 
     const proc = arrpcProcess;
     arrpcProcess = null;
@@ -215,8 +361,7 @@ export async function destroyArRPC(): Promise<void> {
     startTime = null;
     readyTime = null;
     isReady = false;
-    stderrBuffer = "";
-    lastHeartbeat = null;
+    appVersion = null;
 
     if (proc) {
         proc.removeAllListeners();
@@ -258,96 +403,16 @@ export async function restartArRPC() {
     }
 }
 
-function validateServerInfo(data: ArRPCServerInfoMessage["data"]): boolean {
-    if (data.port !== undefined) {
-        if (typeof data.port !== "number" || data.port < 1 || data.port > 65535) {
-            debugLog(`Invalid port in SERVER_INFO: ${data.port}`);
-            return false;
-        }
-    }
-
-    if (data.host !== undefined) {
-        if (typeof data.host !== "string" || data.host.length === 0) {
-            debugLog(`Invalid host in SERVER_INFO: ${data.host}`);
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function handleArRPCMessage(message: ArRPCMessage) {
-    switch (message.type) {
-        case "SERVER_INFO": {
-            if (!validateServerInfo(message.data)) {
-                lastError = "Received invalid SERVER_INFO data";
-                return;
-            }
-
-            const { port, host, socketPath, service } = message.data;
-            if (port && host && service === "bridge") {
-                serverPort = port;
-                serverHost = host;
-                debugLog(`Received arRPC server info [${service}]: ${host}:${port}`);
-            } else if (socketPath) {
-                debugLog(`Received arRPC server info [${service}]: ${socketPath}`);
-            } else if (port && host) {
-                debugLog(`Received arRPC server info [${service}]: ${host}:${port}`);
-            }
-            break;
-        }
-
-        case "READY": {
-            isReady = true;
-            readyTime = Date.now();
-            clearInitTimeout();
-            debugLog(`arRPC ready, version: ${message.data.version}`);
-            mainWin?.webContents.send(IpcEvents.ARRPC_READY);
-            break;
-        }
-
-        case "HEARTBEAT": {
-            lastHeartbeat = message.data.timestamp;
-            debugLog(`Received heartbeat: ${message.data.timestamp}`);
-            break;
-        }
-
-        case "STREAMERMODE": {
-            debugLog(`Streamer mode changed: ${message.data}`);
-            mainWin?.webContents.send(IpcEvents.STREAMER_MODE_DETECTED, message.data);
-            break;
-        }
-    }
-}
-
-function processStderrData(data: string) {
-    stderrBuffer += data;
-
-    const lines = stderrBuffer.split("\n");
-    stderrBuffer = lines.pop() || "";
-
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-
-        try {
-            const message = JSON.parse(trimmed);
-            if (isArRPCMessage(message)) {
-                handleArRPCMessage(message);
-                continue;
-            }
-        } catch (e) {
-            debugLog(`Failed to parse stderr line as JSON: ${e instanceof Error ? e.message : String(e)}`);
-        }
-
-        console.error("[arRPC ! stderr]", trimmed);
-        lastError = trimmed;
-    }
-}
-
 export async function initArRPC() {
-    if (Settings.store.arRPCDisabled || !Settings.store.arRPC) {
-        debugLog("arRPC is disabled in settings, destroying if running");
+    if (Settings.store.arRPCDisabled) {
+        debugLog("Rich Presence is disabled");
+        await destroyArRPC();
+        restartCount = 0;
+        return;
+    }
+
+    if (!Settings.store.arRPC) {
+        debugLog("Built-in server is disabled, using external only");
         await destroyArRPC();
         restartCount = 0;
         return;
@@ -361,7 +426,7 @@ export async function initArRPC() {
     lastError = null;
     lastExitCode = null;
     isReady = false;
-    stderrBuffer = "";
+    appVersion = null;
 
     try {
         const resolvedBinaryPath = getArRPCBinaryPath();
@@ -373,7 +438,7 @@ export async function initArRPC() {
 
         const env: NodeJS.ProcessEnv = {
             ...process.env,
-            ARRPC_IPC_MODE: "1",
+            ARRPC_STATE_FILE: "1",
             ARRPC_PARENT_MONITOR: "1"
         };
 
@@ -398,9 +463,11 @@ export async function initArRPC() {
         debugLog(`arRPC process spawned with PID: ${arrpcProcess.pid}`);
         startTime = Date.now();
 
+        startStateFileWatching();
+
         initTimeout = setTimeout(() => {
             if (!isReady && arrpcProcess) {
-                const error = "arRPC failed to send READY message within timeout";
+                const error = "arRPC failed to become ready within timeout";
                 console.error(`[arRPC] ${error}`);
                 lastError = error;
                 destroyArRPC();
@@ -409,17 +476,30 @@ export async function initArRPC() {
 
         arrpcProcess.stdout?.on("data", data => {
             const output = data.toString().trim();
-            console.log(output);
+            if (output) console.log(output);
         });
 
         arrpcProcess.stderr?.on("data", data => {
-            processStderrData(data.toString());
+            const output = data.toString().trim();
+            if (output) {
+                try {
+                    const message = JSON.parse(output);
+                    if (message.type === "STREAMERMODE") {
+                        debugLog(`Streamer mode changed: ${message.data}`);
+                        mainWin?.webContents.send(IpcEvents.STREAMER_MODE_DETECTED, message.data);
+                        return;
+                    }
+                } catch {}
+                console.error("[arRPC ! stderr]", output);
+                lastError = output;
+            }
         });
 
         arrpcProcess.on("error", err => {
             console.error("[arRPC] Process error:", err);
             lastError = err.message;
             clearInitTimeout();
+            stopStateFileWatching();
         });
 
         arrpcProcess.on("exit", (code, signal) => {
@@ -439,10 +519,10 @@ export async function initArRPC() {
             startTime = null;
             readyTime = null;
             isReady = false;
-            stderrBuffer = "";
-            lastHeartbeat = null;
+            appVersion = null;
 
             clearInitTimeout();
+            stopStateFileWatching();
         });
     } catch (e) {
         console.error("[arRPC] Failed to start arRPC server:", e);

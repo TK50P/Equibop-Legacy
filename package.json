@@ -28,7 +28,7 @@
         "postinstall": "bun updateArrpcDB && bun compileArrpc"
     },
     "dependencies": {
-        "arrpc-bun": "^1.3.1",
+        "arrpc-bun": "^1.3.2",
         "electron-updater": "^6.7.3"
     },
     "optionalDependencies": {

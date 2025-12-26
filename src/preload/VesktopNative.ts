@@ -119,7 +119,9 @@ export const VesktopNative = {
                 restartCount: number;
                 binaryPath: string | null;
                 isReady: boolean;
-                lastHeartbeat: number | null;
+                isStale: boolean;
+                appVersion: string | null;
+                activities: number;
             }>(IpcEvents.ARRPC_GET_STATUS)
     },
     win: {
