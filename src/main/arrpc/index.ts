@@ -5,7 +5,6 @@
  */
 
 import { ChildProcess, spawn } from "child_process";
-import { app } from "electron";
 import { accessSync, constants, existsSync, FSWatcher, readFileSync, statSync, watch } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -68,15 +67,10 @@ function getArRPCBinaryPath(): string {
     const { platform } = process;
     const { arch } = process;
 
-    const platformName = platform === "win32" ? "windows" : platform;
-
-    let binaryName = `arrpc-${platformName}-${arch}`;
-    if (platform === "win32") binaryName += ".exe";
-    if (app.isPackaged) binaryName = platform === "win32" ? "arrpc.exe" : "arrpc";
-
     debugLog(`Looking for arRPC binary for platform=${platform}, arch=${arch}`);
 
     const checkBinary = (path: string): boolean => {
+        if (path.includes(".asar")) return false;
         if (!existsSync(path)) return false;
 
         const stats = statSync(path);
@@ -97,36 +91,62 @@ function getArRPCBinaryPath(): string {
         }
     };
 
-    if (process.resourcesPath) {
-        const binaryPath = join(process.resourcesPath, "arrpc", binaryName);
-        debugLog(`Checking packaged arRPC binary path: ${binaryPath}`);
+    const platformName = platform === "win32" ? "windows" : platform;
+    const archName = arch === "arm64" ? "arm64" : "x64";
+    const devBinaryName = `arrpc-${platformName}-${archName}${platform === "win32" ? ".exe" : ""}`;
+    const packagedBinaryName = platform === "win32" ? "arrpc.exe" : "arrpc";
 
-        if (checkBinary(binaryPath)) {
-            debugLog(`Found arRPC binary at: ${binaryPath}`);
-            return binaryPath;
+    const searchPaths: string[] = [];
+
+    if (platform === "linux") {
+        searchPaths.push("/usr/bin/arrpc-bun");
+        searchPaths.push("/usr/local/bin/arrpc-bun");
+        searchPaths.push("/app/bin/arrpc-bun");
+        searchPaths.push("/snap/bin/arrpc-bun");
+        const homeDir = process.env.HOME;
+        if (homeDir) {
+            searchPaths.push(join(homeDir, ".nix-profile/bin/arrpc-bun"));
+            searchPaths.push(join(homeDir, ".local/bin/arrpc-bun"));
         }
+        searchPaths.push("/home/linuxbrew/.linuxbrew/bin/arrpc-bun");
+    } else if (platform === "darwin") {
+        searchPaths.push("/usr/local/bin/arrpc-bun");
+        searchPaths.push("/opt/homebrew/bin/arrpc-bun");
+        const homeDir = process.env.HOME;
+        if (homeDir) {
+            searchPaths.push(join(homeDir, ".nix-profile/bin/arrpc-bun"));
+        }
+    } else if (platform === "win32") {
+        const localAppData = process.env.LOCALAPPDATA;
+        const programFiles = process.env.PROGRAMFILES;
+        if (localAppData) {
+            searchPaths.push(join(localAppData, "arrpc-bun", "arrpc-bun.exe"));
+        }
+        if (programFiles) {
+            searchPaths.push(join(programFiles, "arrpc-bun", "arrpc-bun.exe"));
+        }
+    }
+
+    if (process.resourcesPath) {
+        searchPaths.push(join(process.resourcesPath, "arrpc", packagedBinaryName));
     }
 
     if (STATIC_DIR.includes(".asar")) {
-        const asarDir = STATIC_DIR.split(".asar")[0] + ".asar";
-        const asarParent = join(asarDir, "..");
-        const systemPath = join(asarParent, "arrpc", binaryName);
-        debugLog(`Checking system Electron path: ${systemPath}`);
+        const asarParent = join(STATIC_DIR.split(".asar")[0] + ".asar", "..");
+        searchPaths.push(join(asarParent, "arrpc", packagedBinaryName));
+    }
 
-        if (checkBinary(systemPath)) {
-            debugLog(`Found arRPC binary at system path: ${systemPath}`);
-            return systemPath;
+    searchPaths.push(join(STATIC_DIR, "dist", devBinaryName));
+
+    for (const path of searchPaths) {
+        debugLog(`Checking: ${path}`);
+        if (checkBinary(path)) {
+            debugLog(`Found arRPC binary at: ${path}`);
+            return path;
         }
     }
 
-    const devPath = join(STATIC_DIR, "dist", binaryName);
-    debugLog(`Checking dev path: ${devPath}`);
-    if (checkBinary(devPath)) {
-        debugLog(`Found arRPC binary at dev path: ${devPath}`);
-        return devPath;
-    }
-
-    throw new Error(`arRPC binary not found for ${platformName}-${arch}. Tried: ${devPath}`);
+    throw new Error(`arRPC binary not found. Searched: ${searchPaths.join(", ")}`);
 }
 
 let arrpcProcess: ChildProcess | null = null;
