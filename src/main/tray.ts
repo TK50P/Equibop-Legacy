@@ -9,6 +9,7 @@ import { join } from "path";
 import { STATIC_DIR } from "shared/paths";
 
 import { createAboutWindow } from "./about";
+import { createArgumentsWindow } from "./arguments";
 import { restartArRPC } from "./arrpc";
 import { AppEvents } from "./events";
 import { Settings } from "./settings";
@@ -236,15 +237,16 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                     { id: 2, label: "About", enabled: true, visible: true },
                     { id: 3, label: "Repair Equicord", enabled: true, visible: true },
                     { id: 4, label: "Reset Equibop", enabled: true, visible: true },
+                    { id: 5, label: "Launch Arguments", enabled: true, visible: true },
                     {
-                        id: 5,
+                        id: 6,
                         label: "Restart arRPC",
                         enabled: true,
                         visible: Settings.store.arRPC === true
                     },
-                    { id: 6, type: "separator" as const, enabled: true, visible: true },
-                    { id: 7, label: "Restart", enabled: true, visible: true },
-                    { id: 8, label: "Quit", enabled: true, visible: true }
+                    { id: 7, type: "separator" as const, enabled: true, visible: true },
+                    { id: 8, label: "Restart", enabled: true, visible: true },
+                    { id: 9, label: "Quit", enabled: true, visible: true }
                 ];
 
                 const menuResult = nativeSNI.setStatusNotifierMenu(menuItems);
@@ -279,14 +281,17 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                         case 4: // reset Equibop
                             clearData(win);
                             break;
-                        case 5: // restart arRPC-bun
+                        case 5: // launch arguments
+                            createArgumentsWindow();
+                            break;
+                        case 6: // restart arRPC-bun
                             restartArRPC();
                             break;
-                        case 7: // restart
+                        case 8: // restart
                             app.relaunch();
                             app.quit();
                             break;
-                        case 8: // quit
+                        case 9: // quit
                             setIsQuitting(true);
                             app.quit();
                             break;
@@ -336,6 +341,10 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
             async click() {
                 await clearData(win);
             }
+        },
+        {
+            label: "Launch Arguments",
+            click: createArgumentsWindow
         },
         {
             label: "Restart arRPC",

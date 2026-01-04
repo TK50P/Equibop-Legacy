@@ -12,7 +12,6 @@ import { ComponentType } from "react";
 import { Settings, useSettings } from "renderer/settings";
 import { isMac, isWindows } from "renderer/utils";
 
-import { Arguments } from "./Arguments";
 import { ArRPCSettingsButton } from "./ArRPCSettings";
 import { AutoStartToggle } from "./AutoStartToggle";
 import { DeveloperOptionsButton } from "./DeveloperOptions";
@@ -99,7 +98,6 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
         UserAssetsButton
     ],
     Behaviour: [
-        Arguments,
         {
             key: "tray",
             title: "Tray Icon",

@@ -32,7 +32,7 @@ export let enableHardwareAcceleration = true;
 function init() {
     setAsDefaultProtocolClient("discord");
 
-    const { disableSmoothScroll, hardwareAcceleration, hardwareVideoAcceleration, arguments: args } = Settings.store;
+    const { disableSmoothScroll, hardwareAcceleration, hardwareVideoAcceleration, launchArguments } = Settings.store;
 
     const enabledFeatures = new Set(app.commandLine.getSwitchValue("enable-features").split(","));
     const disabledFeatures = new Set(app.commandLine.getSwitchValue("disable-features").split(","));
@@ -68,9 +68,22 @@ function init() {
         disabledFeatures.add("CalculateNativeWinOcclusion");
     }
 
-    if (args) {
-        app.commandLine.appendArgument(args);
-        console.log("Running with additional arguments:", args);
+    if (launchArguments) {
+        const args = launchArguments.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+        for (const arg of args) {
+            const cleanArg = arg.replace(/^["']|["']$/g, "");
+            if (cleanArg.startsWith("--")) {
+                const eqIndex = cleanArg.indexOf("=");
+                if (eqIndex !== -1) {
+                    const key = cleanArg.slice(2, eqIndex);
+                    const value = cleanArg.slice(eqIndex + 1);
+                    app.commandLine.appendSwitch(key, value);
+                } else {
+                    app.commandLine.appendSwitch(cleanArg.slice(2));
+                }
+            }
+        }
+        console.log("Applied launch arguments:", launchArguments);
     }
 
     // work around chrome 66 disabling autoplay by default
