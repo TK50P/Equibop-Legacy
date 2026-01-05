@@ -28,14 +28,14 @@
         "postinstall": "bun updateArrpcDB && bun compileArrpc"
     },
     "dependencies": {
-        "arrpc-bun": "^1.3.2",
+        "arrpc-bun": "^1.3.4",
         "electron-updater": "^6.7.3"
     },
     "optionalDependencies": {
         "@vencord/venmic": "^6.1.0"
     },
     "devDependencies": {
-        "@equicord/types": "^1.13.7",
+        "@equicord/types": "^1.13.9",
         "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
         "@stylistic/eslint-plugin": "^5.6.1",
         "@types/node": "^25.0.3",
@@ -57,7 +57,7 @@
         "source-map-support": "^0.5.21",
         "type-fest": "^5.3.1",
         "typescript": "^5.9.3",
-        "typescript-eslint": "^8.50.1",
+        "typescript-eslint": "^8.52.0",
         "xml-formatter": "^3.6.7"
     },
     "engines": {
