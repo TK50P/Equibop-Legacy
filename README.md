@@ -1,10 +1,10 @@
-# Equibop [<img src="/static/icon.png" width="225" align="right" alt="Equibop">](https://github.com/Equicord/Equibop)
+# Equibop-Legacy [<img src="/static/icon.png" width="225" align="right" alt="Equibop">](https://github.com/Equicord/Equibop)
 
 [![Equicord](https://img.shields.io/badge/Equicord-grey?style=flat)](https://github.com/Equicord/Equicord)
 [![Tests](https://github.com/Equicord/Equibop/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Equicord/Equibop/actions/workflows/test.yml)
 [![Discord](https://img.shields.io/discord/1173279886065029291.svg?color=768AD4&label=Discord&logo=discord&logoColor=white)](https://equicord.org/discord)
 
-Equibop is a fork of [Vesktop](https://github.com/Vencord/Vesktop).
+Equibop-Legacy is a fork of [Vesktop](https://github.com/Vencord/Vesktop) but with NT 6.x Support.
 
 You can join our [discord server](https://equicord.org/discord) for commits, changes, chat or even support.<br></br>
 
@@ -19,6 +19,9 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 - Equicord preinstalled
 - Much more lightweight and faster than the official Discord app
 - Much better privacy, since Discord has no access to your system
+- Windows NT 6.x (Vista _with [Extended kernel](https://win32subsystem.live/extended-kernel/download/)_, 7, 8, 8.1) Support
+- Windows 32-bit support
+- macOS Catalina 10.15 Support
 
 **Extra included changes**
 
@@ -29,6 +32,12 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 **Not fully Supported**:
 - Global Keybinds
 - arRPC-bun (No support for lower than NT 10.0)
+
+<img width="1920" height="1080" alt="Windows Vista-2025-11-21-21-29-30" src="https://github.com/user-attachments/assets/930db53a-e8d4-49d0-b898-e2f532cf43c9" />
+<img width="1920" height="1080" alt="Screenshot 2025-08-30 150942" src="https://github.com/user-attachments/assets/f5813e00-9158-4ce1-9a42-1e5557c2530e" />
+<img width="1920" height="1080" alt="Windows 8 1-2025-11-02-22-20-00" src="https://github.com/user-attachments/assets/14207aa9-cf93-45ac-a289-89a03da2b953" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/bdf579d9-a548-41f4-877b-f5828be39af2" />
+<img width="1920" height="1080" alt="Screen Shot 2025-08-31 at 7 40 52 AM" src="https://github.com/user-attachments/assets/537334e9-376a-4eaa-8224-afb62112175f" />
 
 # Equibop Arguments
 <!-- No Arguments for Linux because I don't have plan for supporting like Ubuntu 16.04 lol -->
