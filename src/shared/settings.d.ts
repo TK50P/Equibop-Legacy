@@ -37,7 +37,6 @@ export interface Settings {
     disableMinSize?: boolean;
     clickTrayToShowHide?: boolean;
     customTitleBar?: boolean;
-    launchArguments?: string;
 
     enableSplashScreen?: boolean;
     splashTheming?: boolean;
@@ -74,6 +73,8 @@ export interface State {
     linuxAutoStartEnabled?: boolean;
 
     equicordDir?: string;
+
+    launchArguments?: string;
 
     updater?: {
         ignoredVersion?: string;
