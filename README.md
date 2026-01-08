@@ -107,7 +107,7 @@ Inside this folder, you **must** include the files:
 - `electron-v37.2.2-win32-x64` (for 64-Bit)
 - `electron-v37.2.2-win32-ia32` (for 32-Bit)
 
-Now open `package.json`. Replace `bun run build && electron .` with `bun run build && local_electron\\electron-v37.2.2-win32-x64\\electron.exe .`. <br>
+Now open `package.json`. Replace `bun run build && electron .` with `bun run build && local_electron/electron-v37.2.2-win32-x64/electron .`. <br>
 In `"devDependencies"` section, replace `"electron"`'s version (e.g. `"^37.2.2"` with `"file:./local_electron"`). 
 
 Now, go to `"build"` section and add this line.
