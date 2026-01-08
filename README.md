@@ -44,7 +44,7 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 
 ### Runtime Flags
 These flags can be passed when launching the application  
-(or via `Settings > Equibop Settings > Arguments > Configure`):
+(or via `Right-click on the Equibop tray icon > Launch arguments`):
 
 ```bash
 --no-sandbox
