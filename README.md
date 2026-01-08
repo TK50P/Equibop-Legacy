@@ -97,10 +97,11 @@ You need to have the following dependencies installed:
 Packaging will create builds in the dist/ folder
 
 ### For Windows
-You’ll need the following this file:  
+You’ll need the following this files:  
 - [Modified Electron](https://github.com/e3kskoy7wqk/Electron-for-windows-7) (Thanks to [@e3kskoy7wqk](https://github.com/e3kskoy7wqk))
+- [package.json](https://raw.githubusercontent.com/TK50P/Equibop-Legacy/refs/heads/main/local_electron/package.json) (Use `curl` or `wget` to download)
 
-Place the unpacked `dist-(x86).zip` in `local_electron`, rename to `electron-v37.2.2-win32-x64` for 64-Bit, and `electron-v37.2.2-win32-ia32` for 32-Bit.
+Place the unpacked `dist-(x86).zip` and `package.json` in `local_electron`, rename to `electron-v37.2.2-win32-x64` for 64-Bit, and `electron-v37.2.2-win32-ia32` for 32-Bit.
 
 Inside this folder, you **must** include the files:  
 - `electron-v37.2.2-win32-x64` (for 64-Bit)
@@ -115,7 +116,7 @@ Now, go to `"build"` section and add this line.
 "electronVersion": "37.2.2",
 ```
 > [!NOTE]
-> You must change `x64` to `ia32` if you are targetting to 32-Bit.
+> You must change `x64` to `ia32` if you are targetting to 32-Bit. (Including `package.json` *inside of `local_electron`).*
 
 For Example, if code is like this,
 ```js
@@ -185,6 +186,13 @@ set npm_config_arch=ia32
 
 git clone https://github.com/Equicord/Equibop
 cd Equibop
+
+# Link the modified one
+cd local_electron
+bun link
+
+# Move to root of Equibop directory
+cd ..
 
 # Install Dependencies
 bun install
