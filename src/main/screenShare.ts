@@ -9,6 +9,7 @@ import type { StreamPick } from "renderer/components/ScreenSharePicker";
 import { IpcCommands, IpcEvents } from "shared/IpcEvents";
 
 import { isWayland } from "./constants";
+import { getPlatformSpoofInfo } from "./gnuSpoofing";
 import { sendRendererCommand } from "./ipcCommands";
 import { handle } from "./utils/ipcWrappers";
 
@@ -76,7 +77,7 @@ export function registerScreenShareHandler() {
         const streams: Streams = {
             video: source
         };
-        if (choice.audio && process.platform === "win32") streams.audio = "loopback";
+        if (choice.audio && getPlatformSpoofInfo().originalPlatform === "win32") streams.audio = "loopback";
 
         callback(streams);
     });
