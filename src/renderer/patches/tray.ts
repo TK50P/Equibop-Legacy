@@ -6,6 +6,7 @@
 
 import { onceReady } from "@equicord/types/webpack";
 import { FluxDispatcher, MediaEngineStore, UserStore } from "@equicord/types/webpack/common";
+import { Settings } from "renderer/settings";
 
 import { setBadge } from "../appBadge";
 
@@ -83,7 +84,8 @@ onceReady.then(() => {
                 isInCall = false;
                 currentVariant = null;
                 VesktopNative.tray.setVoiceCallState(false);
-                setBadge();
+                if (Settings.store.appBadge) setBadge();
+                else VesktopNative.app.setBadgeCount(0);
             }
         }
     };
