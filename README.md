@@ -27,11 +27,10 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 
 - Tray Customization with voice detection and notification badges
 - Custom Arguments from [this PR](https://github.com/Equicord/Equibop/pull/46)
-- ~arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun~
+- arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun
 
 **Not fully Supported**:
 - Global Keybinds
-- arRPC-bun (No support for lower than NT 10.0)
 
 <img width="1920" height="1080" alt="Windows Vista-2025-11-21-21-29-30" src="https://github.com/user-attachments/assets/930db53a-e8d4-49d0-b898-e2f532cf43c9" />
 <img width="1920" height="1080" alt="Screenshot 2025-08-30 150942" src="https://github.com/user-attachments/assets/f5813e00-9158-4ce1-9a42-1e5557c2530e" />
