@@ -34,6 +34,7 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 
 <img width="1920" height="1080" alt="Windows Vista-2025-11-21-21-29-30" src="https://github.com/user-attachments/assets/930db53a-e8d4-49d0-b898-e2f532cf43c9" />
 <img width="1920" height="1080" alt="Screenshot 2025-08-30 150942" src="https://github.com/user-attachments/assets/f5813e00-9158-4ce1-9a42-1e5557c2530e" />
+<img width="1920" height="1080" alt="Windows_8_x64-2026-01-13-16-38-58" src="https://github.com/user-attachments/assets/c6c1efd9-6773-4e42-af9d-d6d60d861715" />
 <img width="1920" height="1080" alt="Windows 8 1-2025-11-02-22-20-00" src="https://github.com/user-attachments/assets/14207aa9-cf93-45ac-a289-89a03da2b953" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/bdf579d9-a548-41f4-877b-f5828be39af2" />
 <img width="1920" height="1080" alt="Screen Shot 2025-08-31 at 7 40 52 AM" src="https://github.com/user-attachments/assets/537334e9-376a-4eaa-8224-afb62112175f" />
