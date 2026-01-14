@@ -97,7 +97,7 @@ handle(IpcEvents.RELAUNCH, async () => {
     app.exit();
 });
 
-handle(IpcEvents.SHOW_ITEM_IN_FOLDER, (_, path) => {
+handle(IpcEvents.SHOW_ITEM_IN_FOLDER, (_e, path: string) => {
     shell.showItemInFolder(path);
 });
 

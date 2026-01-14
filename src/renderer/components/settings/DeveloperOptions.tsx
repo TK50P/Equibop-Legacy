@@ -70,7 +70,7 @@ const EquicordLocationPicker: SettingsComponent = ({ settings }) => {
                             VesktopNative.fileManager.showItemInFolder(equicordDir!);
                         }}
                     >
-                        {equicordDir}
+                        a custom location
                     </TextButton>
                 ) : (
                     "the default location"
