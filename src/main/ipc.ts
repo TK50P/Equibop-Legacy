@@ -8,7 +8,7 @@ if (process.platform === "linux") import("./venmic");
 
 import { execFile } from "node:child_process";
 import { type FSWatcher, mkdirSync, readFileSync, watch } from "node:fs";
-import { open, readFile } from "node:fs/promises";
+import { open, readFile, stat } from "node:fs/promises";
 import { release } from "node:os";
 import { join } from "node:path";
 
@@ -97,8 +97,15 @@ handle(IpcEvents.RELAUNCH, async () => {
     app.exit();
 });
 
-handle(IpcEvents.SHOW_ITEM_IN_FOLDER, (_e, path: string) => {
-    shell.showItemInFolder(path);
+handleSync(IpcEvents.IS_USING_CUSTOM_VENCORD_DIR, () => !!State.store.equicordDir);
+handle(IpcEvents.SHOW_CUSTOM_VENCORD_DIR, async () => {
+    const { equicordDir } = State.store;
+    if (!equicordDir) return;
+
+    const stats = await stat(equicordDir);
+    if (!stats.isDirectory()) return;
+
+    shell.openPath(equicordDir);
 });
 
 function getWindow(e: IpcMainInvokeEvent, key?: string) {
@@ -138,8 +145,6 @@ handle(IpcEvents.SPELLCHECK_REPLACE_MISSPELLING, (e, word: string) => {
 handle(IpcEvents.SPELLCHECK_ADD_TO_DICTIONARY, (e, word: string) => {
     e.sender.session.addWordToSpellCheckerDictionary(word);
 });
-
-handleSync(IpcEvents.GET_VENCORD_DIR, e => (e.returnValue = State.store.equicordDir));
 
 handle(IpcEvents.SELECT_VENCORD_DIR, async (_e, value?: null) => {
     if (value === null) {
