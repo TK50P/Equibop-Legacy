@@ -96,8 +96,18 @@ private:
         GError **error,
         gpointer user_data);
 
+    static void on_watcher_name_changed(
+        GDBusConnection *connection,
+        const gchar *sender_name,
+        const gchar *object_path,
+        const gchar *interface_name,
+        const gchar *signal_name,
+        GVariant *parameters,
+        gpointer user_data);
+
     bool register_with_watcher();
     bool register_menu();
+    void subscribe_to_watcher();
 
 public:
     StatusNotifierItem();

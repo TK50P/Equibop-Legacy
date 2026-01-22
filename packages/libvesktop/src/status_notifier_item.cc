@@ -542,6 +542,10 @@ StatusNotifierItem::~StatusNotifierItem()
 {
     if (bus)
     {
+        if (watcher_id != 0)
+        {
+            g_dbus_connection_signal_unsubscribe(bus.get(), watcher_id);
+        }
         if (menu_registration_id != 0)
         {
             g_dbus_connection_unregister_object(bus.get(), menu_registration_id);
@@ -607,6 +611,8 @@ bool StatusNotifierItem::initialize()
     {
         return false;
     }
+
+    subscribe_to_watcher();
 
     return true;
 }
@@ -854,4 +860,58 @@ void StatusNotifierItem::set_menu_click_callback(std::function<void(int32_t)> ca
 void StatusNotifierItem::set_activate_callback(std::function<void()> callback)
 {
     activate_callback = callback;
+}
+
+void StatusNotifierItem::on_watcher_name_changed(
+    GDBusConnection *connection,
+    const gchar *sender_name,
+    const gchar *object_path,
+    const gchar *interface_name,
+    const gchar *signal_name,
+    GVariant *parameters,
+    gpointer user_data)
+{
+    (void)connection;
+    (void)sender_name;
+    (void)object_path;
+    (void)interface_name;
+    (void)signal_name;
+
+    auto *self = static_cast<StatusNotifierItem *>(user_data);
+
+    const gchar *name;
+    const gchar *old_owner;
+    const gchar *new_owner;
+    g_variant_get(parameters, "(&s&s&s)", &name, &old_owner, &new_owner);
+
+    if (g_strcmp0(name, WATCHER_SERVICE) != 0)
+        return;
+
+    if (new_owner && new_owner[0] != '\0')
+    {
+        self->registered_with_watcher = false;
+        self->register_with_watcher();
+    }
+    else
+    {
+        self->registered_with_watcher = false;
+    }
+}
+
+void StatusNotifierItem::subscribe_to_watcher()
+{
+    if (!bus || watcher_id != 0)
+        return;
+
+    watcher_id = g_dbus_connection_signal_subscribe(
+        bus.get(),
+        "org.freedesktop.DBus",
+        "org.freedesktop.DBus",
+        "NameOwnerChanged",
+        "/org/freedesktop/DBus",
+        WATCHER_SERVICE,
+        G_DBUS_SIGNAL_FLAGS_NONE,
+        on_watcher_name_changed,
+        this,
+        nullptr);
 }
