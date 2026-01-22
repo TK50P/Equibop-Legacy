@@ -10,6 +10,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { IpcEvents } from "shared/IpcEvents";
 import { STATIC_DIR } from "shared/paths";
+import { WebSocket } from "ws";
 
 import { mainWin } from "../mainWindow";
 import { Settings } from "../settings";
@@ -161,6 +162,7 @@ let binaryPath: string | null = null;
 let isReady: boolean = false;
 let mainSettingsListener: (() => void) | null = null;
 let configSettingsListener: (() => void) | null = null;
+let wsSettingsListener: (() => void) | null = null;
 let initTimeout: NodeJS.Timeout | null = null;
 let isDestroying: boolean = false;
 let stateFileWatcher: FSWatcher | null = null;
@@ -172,6 +174,11 @@ const INIT_TIMEOUT_MS = 10000;
 const PROCESS_KILL_TIMEOUT_MS = 5000;
 const STATE_CHECK_INTERVAL_MS = 500;
 const STATE_FILE_STALE_MS = 60000;
+const WS_RECONNECT_INTERVAL_MS = 5000;
+
+let ws: WebSocket | null = null;
+let wsReconnectTimer: NodeJS.Timeout | null = null;
+let wsIntentionalClose = false;
 
 function findStateFile(): string | null {
     const tempDir = tmpdir();
@@ -235,7 +242,7 @@ function handleStateUpdate(state: StateFileContent) {
         readyTime = Date.now();
         clearInitTimeout();
         debugLog(`arRPC ready (from state file), version: ${state.appVersion}`);
-        mainWin?.webContents.send(IpcEvents.ARRPC_READY);
+        updateWebSocketConnection();
     }
 }
 
@@ -308,6 +315,135 @@ function findAnyStateFile(): StateFileResult {
     return { content: null, stale: false };
 }
 
+function getWsConnectionInfo(): { host: string; port: number } | null {
+    const customHost = Settings.store.arRPCWebSocketCustomHost;
+    const customPort = Settings.store.arRPCWebSocketCustomPort;
+
+    if (customHost || customPort) {
+        return {
+            host: customHost || "127.0.0.1",
+            port: customPort || 1337
+        };
+    }
+
+    const state = readStateFile();
+    if (state?.servers.bridge) {
+        return {
+            host: state.servers.bridge.host,
+            port: state.servers.bridge.port
+        };
+    }
+
+    if (serverHost && serverPort) {
+        return { host: serverHost, port: serverPort };
+    }
+
+    return null;
+}
+
+function connectWebSocket() {
+    const connectionInfo = getWsConnectionInfo();
+    if (!connectionInfo) {
+        debugLog("No connection info available for WebSocket");
+        return;
+    }
+
+    const { host, port } = connectionInfo;
+    const wsUrl = `ws://${host}:${port}`;
+
+    debugLog(`Connecting WebSocket to ${wsUrl}`);
+
+    if (ws) {
+        wsIntentionalClose = true;
+        ws.close();
+    }
+
+    ws = new WebSocket(wsUrl);
+
+    ws.on("message", (data: Buffer) => {
+        try {
+            const message = JSON.parse(data.toString());
+            debugLog("Received activity:", message);
+
+            mainWin?.webContents.send(IpcEvents.ARRPC_ACTIVITY, message);
+        } catch (e) {
+            debugLog("Failed to parse WebSocket message:", e);
+        }
+    });
+
+    ws.on("error", (err: Error) => {
+        debugLog("WebSocket error:", err.message);
+    });
+
+    ws.on("close", () => {
+        if (wsIntentionalClose) {
+            wsIntentionalClose = false;
+            return;
+        }
+
+        const autoReconnect = Settings.store.arRPCWebSocketAutoReconnect ?? true;
+        debugLog(`WebSocket closed${autoReconnect ? ", will reconnect" : ""}`);
+
+        mainWin?.webContents.send(IpcEvents.ARRPC_ACTIVITY, { activity: null });
+
+        if (wsReconnectTimer) clearTimeout(wsReconnectTimer);
+
+        if (autoReconnect && shouldConnectWebSocket()) {
+            wsReconnectTimer = setTimeout(() => {
+                debugLog("Attempting WebSocket reconnect...");
+                connectWebSocket();
+            }, WS_RECONNECT_INTERVAL_MS);
+        }
+    });
+
+    ws.on("open", () => {
+        debugLog("WebSocket connected");
+        if (wsReconnectTimer) {
+            clearTimeout(wsReconnectTimer);
+            wsReconnectTimer = null;
+        }
+    });
+}
+
+function stopWebSocket() {
+    if (wsReconnectTimer) {
+        clearTimeout(wsReconnectTimer);
+        wsReconnectTimer = null;
+    }
+
+    if (ws) {
+        wsIntentionalClose = true;
+        ws.close();
+        ws = null;
+    }
+
+    mainWin?.webContents.send(IpcEvents.ARRPC_ACTIVITY, { activity: null });
+    debugLog("WebSocket stopped");
+}
+
+function shouldConnectWebSocket(): boolean {
+    if (Settings.store.arRPCDisabled) return false;
+
+    const customHost = Settings.store.arRPCWebSocketCustomHost;
+    const customPort = Settings.store.arRPCWebSocketCustomPort;
+    if (customHost || customPort) return true;
+
+    if (!Settings.store.arRPC) return false;
+
+    return isReady || arrpcProcess != null;
+}
+
+function updateWebSocketConnection() {
+    if (shouldConnectWebSocket()) {
+        const connectionInfo = getWsConnectionInfo();
+        if (connectionInfo) {
+            connectWebSocket();
+        }
+    } else {
+        stopWebSocket();
+    }
+}
+
 export function getArRPCStatus() {
     const proc = arrpcProcess;
     const pid = proc?.pid ?? null;
@@ -335,7 +471,7 @@ export function getArRPCStatus() {
             isReady: isReady || (isExternal && !isStale),
             isStale,
             appVersion: state.appVersion,
-            activities: state.activities.length
+            activities: state.activities
         };
     }
 
@@ -354,7 +490,7 @@ export function getArRPCStatus() {
         isReady,
         isStale: false,
         appVersion,
-        activities: 0
+        activities: []
     };
 }
 
@@ -373,6 +509,7 @@ export async function destroyArRPC(): Promise<void> {
 
     clearInitTimeout();
     stopStateFileWatching();
+    stopWebSocket();
 
     const proc = arrpcProcess;
     arrpcProcess = null;
@@ -506,7 +643,7 @@ export async function initArRPC() {
                     const message = JSON.parse(output);
                     if (message.type === "STREAMERMODE") {
                         debugLog(`Streamer mode changed: ${message.data}`);
-                        mainWin?.webContents.send(IpcEvents.STREAMER_MODE_DETECTED, message.data);
+                        mainWin?.webContents.send(IpcEvents.ARRPC_ACTIVITY, JSON.parse(message.data));
                         return;
                     }
                 } catch {}
@@ -559,6 +696,7 @@ export function setupArRPC() {
 
     mainSettingsListener = () => {
         initArRPC();
+        updateWebSocketConnection();
     };
 
     configSettingsListener = () => {
@@ -567,11 +705,18 @@ export function setupArRPC() {
         }
     };
 
+    wsSettingsListener = () => {
+        updateWebSocketConnection();
+    };
+
     Settings.addChangeListener("arRPCDisabled", mainSettingsListener);
     Settings.addChangeListener("arRPC", mainSettingsListener);
     Settings.addChangeListener("arRPCDebug", configSettingsListener);
     Settings.addChangeListener("arRPCProcessScanning", configSettingsListener);
     Settings.addChangeListener("arRPCBridge", configSettingsListener);
+    Settings.addChangeListener("arRPCWebSocketCustomHost", wsSettingsListener);
+    Settings.addChangeListener("arRPCWebSocketCustomPort", wsSettingsListener);
+    Settings.addChangeListener("arRPCWebSocketAutoReconnect", wsSettingsListener);
     debugLog("arRPC settings listeners registered");
 }
 
@@ -589,9 +734,15 @@ export async function cleanupArRPC() {
         configSettingsListener = null;
     }
 
-    if (mainSettingsListener === null && configSettingsListener === null) {
-        debugLog("arRPC settings listeners removed");
+    if (wsSettingsListener) {
+        Settings.removeChangeListener("arRPCWebSocketCustomHost", wsSettingsListener);
+        Settings.removeChangeListener("arRPCWebSocketCustomPort", wsSettingsListener);
+        Settings.removeChangeListener("arRPCWebSocketAutoReconnect", wsSettingsListener);
+        wsSettingsListener = null;
     }
 
+    debugLog("arRPC settings listeners removed");
+
+    stopWebSocket();
     await destroyArRPC();
 }

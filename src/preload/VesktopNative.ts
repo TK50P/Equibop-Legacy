@@ -20,18 +20,11 @@ ipcRenderer.on(IpcEvents.SPELLCHECK_RESULT, (_, w: string, s: string[]) => {
     spellCheckCallbacks.forEach(cb => cb(w, s));
 });
 
-type StreamerModeCallback = (data: string) => void;
-const streamerModeCallbacks = new Set<StreamerModeCallback>();
+type ArRPCActivityCallback = (data: any) => void;
+const arrpcActivityCallbacks = new Set<ArRPCActivityCallback>();
 
-ipcRenderer.on(IpcEvents.STREAMER_MODE_DETECTED, (_, data: string) => {
-    streamerModeCallbacks.forEach(cb => cb(data));
-});
-
-type ArRPCReadyCallback = () => void;
-const arrpcReadyCallbacks = new Set<ArRPCReadyCallback>();
-
-ipcRenderer.on(IpcEvents.ARRPC_READY, () => {
-    arrpcReadyCallbacks.forEach(cb => cb());
+ipcRenderer.on(IpcEvents.ARRPC_ACTIVITY, (_, data: any) => {
+    arrpcActivityCallbacks.forEach(cb => cb(data));
 });
 
 let onDevtoolsOpen = () => {};
@@ -93,36 +86,13 @@ export const VesktopNative = {
         addToDictionary: (word: string) => invoke<void>(IpcEvents.SPELLCHECK_ADD_TO_DICTIONARY, word)
     },
     arrpc: {
-        onStreamerModeDetected(cb: StreamerModeCallback) {
-            streamerModeCallbacks.add(cb);
+        onActivity(cb: ArRPCActivityCallback) {
+            arrpcActivityCallbacks.add(cb);
         },
-        offStreamerModeDetected(cb: StreamerModeCallback) {
-            streamerModeCallbacks.delete(cb);
+        offActivity(cb: ArRPCActivityCallback) {
+            arrpcActivityCallbacks.delete(cb);
         },
-        onReady(cb: ArRPCReadyCallback) {
-            arrpcReadyCallbacks.add(cb);
-        },
-        offReady(cb: ArRPCReadyCallback) {
-            arrpcReadyCallbacks.delete(cb);
-        },
-        getStatus: () =>
-            sendSync<{
-                running: boolean;
-                pid: number | null;
-                port: number | null;
-                host: string | null;
-                enabled: boolean;
-                lastError: string | null;
-                lastExitCode: number | null;
-                uptime: number | null;
-                readyTime: number | null;
-                restartCount: number;
-                binaryPath: string | null;
-                isReady: boolean;
-                isStale: boolean;
-                appVersion: string | null;
-                activities: number;
-            }>(IpcEvents.ARRPC_GET_STATUS)
+        openSettings: () => invoke<void>(IpcEvents.ARRPC_OPEN_SETTINGS)
     },
     win: {
         focus: () => invoke<void>(IpcEvents.FOCUS),

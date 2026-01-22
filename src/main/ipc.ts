@@ -29,7 +29,7 @@ import { debounce } from "shared/utils/debounce";
 
 import { IpcEvents } from "../shared/IpcEvents";
 import { setBadgeCount } from "./appBadge";
-import { getArRPCStatus } from "./arrpc";
+import { createArRPCWindow } from "./arrpcWindow";
 import { autoStart } from "./autoStart";
 import { VENCORD_QUICKCSS_FILE, VENCORD_THEMES_DIR } from "./constants";
 import { AppEvents } from "./events";
@@ -74,7 +74,9 @@ handleSync(IpcEvents.AUTOSTART_ENABLED, () => autoStart.isEnabled());
 handle(IpcEvents.ENABLE_AUTOSTART, autoStart.enable);
 handle(IpcEvents.DISABLE_AUTOSTART, autoStart.disable);
 
-handleSync(IpcEvents.ARRPC_GET_STATUS, () => getArRPCStatus());
+handle(IpcEvents.ARRPC_OPEN_SETTINGS, () => {
+    createArRPCWindow();
+});
 
 handleSync(IpcEvents.GET_PLATFORM_SPOOF_INFO, () => getPlatformSpoofInfo());
 

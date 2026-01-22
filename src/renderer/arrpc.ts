@@ -16,7 +16,6 @@ import {
 import { IpcCommands } from "shared/IpcEvents";
 
 import { onIpcCommand } from "./ipcCommands";
-import { Settings } from "./settings";
 
 const logger = new Logger("EquibopRPC", "#5865f2");
 
@@ -92,20 +91,7 @@ async function lookupApp(applicationId: string): Promise<RPCApplication | undefi
     return undefined;
 }
 
-let ws: WebSocket | null = null;
-let reconnectTimer: NodeJS.Timeout | null = null;
-let waitingForReady = false;
-let intentionalClose = false;
-
-async function handleActivityEvent(e: MessageEvent<string>) {
-    let data: ActivityEvent;
-    try {
-        data = JSON.parse(e.data);
-    } catch {
-        logger.error("Failed to parse activity event:", e.data);
-        return;
-    }
-
+async function handleActivityEvent(data: ActivityEvent) {
     const { activity } = data;
 
     if (data.socketId === "STREAMERMODE" || activity?.application_id === "STREAMERMODE") {
@@ -133,214 +119,13 @@ async function handleActivityEvent(e: MessageEvent<string>) {
     FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", ...data });
 }
 
-function connectWebSocket() {
-    const arrpcStatus = VesktopNative.arrpc.getStatus();
-    const customHost = Settings.store.arRPCWebSocketCustomHost;
-    const customPort = Settings.store.arRPCWebSocketCustomPort;
-
-    const host = customHost || arrpcStatus.host || "127.0.0.1";
-    const port = customPort || arrpcStatus.port || 1337;
-
-    const wsUrl = `ws://${host}:${port}`;
-    const isCustom = customHost || customPort;
-    logger.info(`Connecting to arRPC at ${wsUrl}${isCustom ? " (custom)" : ""}`);
-
-    if (ws) {
-        intentionalClose = true;
-        ws.close();
-    }
-    ws = new WebSocket(wsUrl);
-
-    ws.onmessage = handleActivityEvent;
-
-    ws.onerror = err => {
-        logger.error("WebSocket connection error:", err);
-    };
-
-    ws.onclose = () => {
-        if (intentionalClose) {
-            intentionalClose = false;
-            return;
-        }
-
-        const autoReconnect = Settings.store.arRPCWebSocketAutoReconnect ?? true;
-        const reconnectInterval = Settings.store.arRPCWebSocketReconnectInterval || 5000;
-
-        logger.info(`WebSocket closed${autoReconnect ? `, will attempt reconnect in ${reconnectInterval}ms` : ""}`);
-        FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", activity: null });
-
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-
-        if (autoReconnect) {
-            reconnectTimer = setTimeout(() => {
-                logger.info("Attempting to reconnect...");
-                connectWebSocket();
-            }, reconnectInterval);
-        }
-    };
-
-    ws.onopen = () => {
-        logger.info("Successfully connected to arRPCBun");
-        if (reconnectTimer) {
-            clearTimeout(reconnectTimer);
-            reconnectTimer = null;
-        }
-    };
-}
-
-function stopWebSocket() {
-    if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-    }
-    waitingForReady = false;
-    FluxDispatcher.dispatch({ type: "LOCAL_ACTIVITY_UPDATE", activity: null });
-    if (ws) {
-        intentionalClose = true;
-        ws.close();
-        ws = null;
-    }
-    logger.info("Stopped arRPCBun connection");
-}
-
-function shouldConnect(): boolean {
-    if (Settings.store.arRPCDisabled) return false;
-
-    const customHost = Settings.store.arRPCWebSocketCustomHost;
-    const customPort = Settings.store.arRPCWebSocketCustomPort;
-    if (customHost || customPort) return true;
-
-    if (!Settings.store.arRPC) return false;
-
-    const status = VesktopNative.arrpc.getStatus();
-    return status.enabled || status.running;
-}
-
-const ARRPC_READY_TIMEOUT = 15000;
-
-function waitForArRPCReady(): Promise<boolean> {
-    return new Promise(resolve => {
-        const status = VesktopNative.arrpc.getStatus();
-        if (status.isReady && status.port) {
-            resolve(true);
-            return;
-        }
-
-        const timeout = setTimeout(() => {
-            VesktopNative.arrpc.offReady(onReady);
-            logger.warn("Timed out waiting for arRPC to become ready");
-            resolve(false);
-        }, ARRPC_READY_TIMEOUT);
-
-        const onReady = () => {
-            clearTimeout(timeout);
-            VesktopNative.arrpc.offReady(onReady);
-            resolve(true);
-        };
-
-        VesktopNative.arrpc.onReady(onReady);
-    });
-}
-
-async function initArRPCBridge() {
+// Listen for activity events from main process
+VesktopNative.arrpc.onActivity(async (data: ActivityEvent) => {
     await onceReady;
-
-    if (Settings.store.arRPCDisabled) {
-        logger.info("arRPC is disabled");
-        stopWebSocket();
-        return;
-    }
-
-    const customHost = Settings.store.arRPCWebSocketCustomHost;
-    const customPort = Settings.store.arRPCWebSocketCustomPort;
-    const hasCustomSettings = !!(customHost || customPort);
-
-    if (hasCustomSettings) {
-        connectWebSocket();
-        return;
-    }
-
-    if (!Settings.store.arRPC) {
-        stopWebSocket();
-        return;
-    }
-
-    const arrpcStatus = VesktopNative.arrpc.getStatus();
-
-    if (!arrpcStatus.enabled && !arrpcStatus.running) {
-        logger.warn("Equibop built-in arRPC is disabled and not running");
-        stopWebSocket();
-        return;
-    }
-
-    if (arrpcStatus.isReady && arrpcStatus.port) {
-        connectWebSocket();
-        return;
-    }
-
-    if (waitingForReady) return;
-
-    waitingForReady = true;
-    logger.info("Waiting for arRPC to become ready...");
-
-    const ready = await waitForArRPCReady();
-    waitingForReady = false;
-
-    if (ready && shouldConnect()) {
-        connectWebSocket();
-    }
-}
-
-Settings.addChangeListener("arRPCDisabled", initArRPCBridge);
-Settings.addChangeListener("arRPC", initArRPCBridge);
-Settings.addChangeListener("arRPCWebSocketCustomHost", initArRPCBridge);
-Settings.addChangeListener("arRPCWebSocketCustomPort", initArRPCBridge);
-Settings.addChangeListener("arRPCWebSocketAutoReconnect", () => {
-    if (!Settings.store.arRPCWebSocketAutoReconnect && reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-    }
+    handleActivityEvent(data);
 });
 
-VesktopNative.arrpc.onReady(async () => {
-    if (waitingForReady) return;
-    if (ws) return;
-    if (!shouldConnect()) return;
-
-    await onceReady;
-
-    logger.info("arRPC is now ready, connecting");
-    connectWebSocket();
-});
-
-initArRPCBridge();
-
-VesktopNative.arrpc.onStreamerModeDetected(async jsonData => {
-    if (Settings.store.arRPCDisabled || !Settings.store.arRPC) return;
-
-    try {
-        await onceReady;
-
-        const data = JSON.parse(jsonData);
-        if (Settings.store.arRPCDebug) {
-            logger.info("STREAMERMODE detected:", data);
-            logger.info("StreamerModeStore.autoToggle:", StreamerModeStore.autoToggle);
-        }
-
-        if (data.socketId === "STREAMERMODE" && StreamerModeStore.autoToggle) {
-            if (Settings.store.arRPCDebug) {
-                logger.info("Toggling streamer mode to:", data.activity?.application_id === "STREAMERMODE");
-            }
-            FluxDispatcher.dispatch({
-                type: "STREAMER_MODE_UPDATE",
-                key: "enabled",
-                value: data.activity?.application_id === "STREAMERMODE"
-            });
-        }
-    } catch (e) {
-        logger.error("Failed to handle STREAMERMODE:", e);
-    }
-});
+logger.info("arRPC bridge initialized (main process handles connection)");
 
 onIpcCommand(IpcCommands.RPC_INVITE, async code => {
     const { invite } = await InviteActions.resolveInvite(code, "Desktop Modal");
