@@ -21,6 +21,10 @@ export async function applyAppImageSandboxFix() {
     if (isApplied) return;
     isApplied = true;
 
+    if (!AppImageTarget.default?.prototype?.build) {
+        return;
+    }
+
     const oldBuildMethod = AppImageTarget.default.prototype.build;
     AppImageTarget.default.prototype.build = async function (...args) {
         console.log("Running AppImage builder hook", args);
