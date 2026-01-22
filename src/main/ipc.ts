@@ -182,7 +182,11 @@ handle(IpcEvents.CLIPBOARD_COPY_IMAGE, async (_, buf: ArrayBuffer, src: string) 
 function openDebugPage(page: string) {
     const win = new BrowserWindow({
         autoHideMenuBar: true,
-        ...(process.platform === "win32" && { icon: join(STATIC_DIR, "icon.ico") })
+        ...(process.platform === "win32"
+            ? { icon: join(STATIC_DIR, "icon.ico") }
+            : process.platform === "linux"
+              ? { icon: join(STATIC_DIR, "icon.png") }
+              : {})
     });
 
     win.loadURL(page);

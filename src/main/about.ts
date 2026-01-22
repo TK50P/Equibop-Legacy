@@ -18,7 +18,11 @@ export async function createAboutWindow() {
     const about = new BrowserWindow({
         center: true,
         autoHideMenuBar: true,
-        ...(process.platform === "win32" && { icon: join(STATIC_DIR, "icon.ico") }),
+        ...(process.platform === "win32"
+            ? { icon: join(STATIC_DIR, "icon.ico") }
+            : process.platform === "linux"
+              ? { icon: join(STATIC_DIR, "icon.png") }
+              : {}),
         height,
         width
     });

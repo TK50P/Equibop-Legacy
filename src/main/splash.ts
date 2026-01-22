@@ -22,7 +22,11 @@ let doneTasks = 0;
 export async function createSplashWindow(startMinimized = false) {
     splash = new BrowserWindow({
         ...SplashProps,
-        ...(process.platform === "win32" && { icon: join(STATIC_DIR, "icon.ico") }),
+        ...(process.platform === "win32"
+            ? { icon: join(STATIC_DIR, "icon.ico") }
+            : process.platform === "linux"
+              ? { icon: join(STATIC_DIR, "icon.png") }
+              : {}),
         show: !startMinimized,
         webPreferences: {
             preload: join(__dirname, "splashPreload.js")

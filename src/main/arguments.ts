@@ -23,7 +23,11 @@ export function createArgumentsWindow() {
     argumentsWindow = new BrowserWindow({
         center: true,
         autoHideMenuBar: true,
-        ...(process.platform === "win32" && { icon: join(STATIC_DIR, "icon.ico") }),
+        ...(process.platform === "win32"
+            ? { icon: join(STATIC_DIR, "icon.ico") }
+            : process.platform === "linux"
+              ? { icon: join(STATIC_DIR, "icon.png") }
+              : {}),
         height: 300,
         width: 500,
         resizable: false

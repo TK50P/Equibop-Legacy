@@ -47,7 +47,11 @@ function openUpdater(update: UpdateInfo) {
     updaterWindow = new BrowserWindow({
         title: "Equibop Updater",
         autoHideMenuBar: true,
-        ...(process.platform === "win32" && { icon: join(STATIC_DIR, "icon.ico") }),
+        ...(process.platform === "win32"
+            ? { icon: join(STATIC_DIR, "icon.ico") }
+            : process.platform === "linux"
+              ? { icon: join(STATIC_DIR, "icon.png") }
+              : {}),
         webPreferences: {
             preload: join(__dirname, "updaterPreload.js")
         },
