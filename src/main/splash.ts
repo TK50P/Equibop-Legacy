@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { BrowserWindow } from "electron";
+import { BrowserWindow, nativeTheme } from "electron";
 import { join } from "path";
 import { SplashProps } from "shared/browserWinProperties";
 import { STATIC_DIR } from "shared/paths";
@@ -34,17 +34,25 @@ export async function createSplashWindow(startMinimized = false) {
 
     const { splashBackground, splashColor, splashTheming, splashProgress, splashPixelated } = Settings.store;
 
+    const isDark = nativeTheme.shouldUseDarkColors;
+    const systemBg = isDark ? "hsl(223 6.7% 20.6%)" : "white";
+    const systemFg = isDark ? "white" : "black";
+    const systemFgSemiTrans = isDark ? "rgb(255 255 255 / 0.2)" : "rgb(0 0 0 / 0.2)";
+
     if (splashTheming !== false) {
-        if (splashColor) {
-            const semiTransparentSplashColor = splashColor.replace("rgb(", "rgba(").replace(")", ", 0.2)");
+        const fg = splashColor || systemFg;
+        const bg = splashBackground || systemBg;
+        const fgSemiTrans = splashColor
+            ? splashColor.replace("rgb(", "rgba(").replace(")", ", 0.2)")
+            : systemFgSemiTrans;
 
-            splash.webContents.insertCSS(`body { --fg: ${splashColor} !important }`);
-            splash.webContents.insertCSS(`body { --fg-semi-trans: ${semiTransparentSplashColor} !important }`);
-        }
-
-        if (splashBackground) {
-            splash.webContents.insertCSS(`body { --bg: ${splashBackground} !important }`);
-        }
+        splash.webContents.insertCSS(
+            `body { --bg: ${bg} !important; --fg: ${fg} !important; --fg-semi-trans: ${fgSemiTrans} !important; }`
+        );
+    } else {
+        splash.webContents.insertCSS(
+            `body { --bg: ${systemBg} !important; --fg: ${systemFg} !important; --fg-semi-trans: ${systemFgSemiTrans} !important; }`
+        );
     }
 
     if (splashPixelated) {
