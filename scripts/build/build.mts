@@ -12,7 +12,13 @@ import vencordDep from "./vencordDep.mjs";
 import { includeDirPlugin } from "./includeDirPlugin.mts";
 
 const isDev = process.argv.includes("--dev");
-const gitHash = execSync("git rev-parse HEAD", { encoding: "utf-8" }).trim();
+
+let gitHash: string;
+try {
+    gitHash = execSync("git rev-parse HEAD", { encoding: "utf-8" }).trim();
+} catch {
+    gitHash = process.env.FLATPAK_BUILDER_BUILDDIR ? "flatpak" : "unknown";
+}
 
 const CommonOpts: BuildOptions = {
     minify: !isDev,
