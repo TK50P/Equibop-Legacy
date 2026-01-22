@@ -302,10 +302,12 @@ Settings.addChangeListener("arRPCWebSocketAutoReconnect", () => {
     }
 });
 
-VesktopNative.arrpc.onReady(() => {
+VesktopNative.arrpc.onReady(async () => {
     if (waitingForReady) return;
     if (ws) return;
     if (!shouldConnect()) return;
+
+    await onceReady;
 
     logger.info("arRPC is now ready, connecting");
     connectWebSocket();
