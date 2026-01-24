@@ -124,7 +124,7 @@ let streamCloseCallback: ((data: any) => void) | null = null;
 
 if (isLinux) {
     onceReady.then(() => {
-        streamCloseCallback = ({ streamKey }: { streamKey: string }) => {
+        streamCloseCallback = ({ streamKey }: { streamKey: string; }) => {
             const owner = streamKey.split(":").at(-1);
 
             if (owner !== UserStore.getCurrentUser().id) {
@@ -187,7 +187,7 @@ export function openScreenSharePicker(screens: Source[], skipPicker: boolean) {
     });
 }
 
-function ScreenPicker({ screens, chooseScreen }: { screens: Source[]; chooseScreen: (id: string) => void }) {
+function ScreenPicker({ screens, chooseScreen }: { screens: Source[]; chooseScreen: (id: string) => void; }) {
     return (
         <div className={cl("screen-grid")}>
             {screens.map(({ id, name, url }) => (
@@ -278,11 +278,11 @@ function AudioSettingsModal({
                     description="Exclude device nodes, such as nodes belonging to microphones or speakers."
                     hideBorder
                     onChange={v =>
-                        (Settings.audio = {
-                            ...Settings.audio,
-                            ignoreDevices: v,
-                            deviceSelect: v ? false : Settings.audio?.deviceSelect
-                        })
+                    (Settings.audio = {
+                        ...Settings.audio,
+                        ignoreDevices: v,
+                        deviceSelect: v ? false : Settings.audio?.deviceSelect
+                    })
                     }
                     value={Settings.audio?.ignoreDevices ?? true}
                 />
@@ -646,9 +646,9 @@ function AudioSourcePickerLinux({
 
     const allSources = sources.ok
         ? [...specialSources, ...sources.targets]
-              .map(target => mapToAudioItem(target, granularSelect, deviceSelect))
-              .flat()
-              .filter(uniqueName)
+            .map(target => mapToAudioItem(target, granularSelect, deviceSelect))
+            .flat()
+            .filter(uniqueName)
         : [];
 
     return (

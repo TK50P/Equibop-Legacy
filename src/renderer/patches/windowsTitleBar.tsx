@@ -12,7 +12,7 @@ if (Settings.store.customTitleBar)
     addPatch({
         patches: [
             {
-                find: ".USE_OSX_NATIVE_TRAFFIC_LIGHTS?",
+                find: ".USE_OSX_NATIVE_TRAFFIC_LIGHTS",
                 replacement: [
                     {
                         match: /case \i\.\i\.WINDOWS:/,
