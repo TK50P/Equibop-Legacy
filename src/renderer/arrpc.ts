@@ -73,7 +73,7 @@ async function lookupApp(applicationId: string): Promise<RPCApplication | undefi
     }
 
     try {
-        const socket: { application?: RPCApplication; } = {};
+        const socket: { application?: RPCApplication } = {};
         await fetchApplicationsRPC(socket, applicationId);
 
         if (socket.application) {
