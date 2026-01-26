@@ -23,7 +23,7 @@ import {
     session,
     shell
 } from "electron";
-import { enableHardwareAcceleration } from "main";
+import { enableHardwareAcceleration } from "./startup";
 import { STATIC_DIR } from "shared/paths";
 import { debounce } from "shared/utils/debounce";
 
