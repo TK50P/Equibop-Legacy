@@ -23,7 +23,6 @@ import {
     session,
     shell
 } from "electron";
-import { enableHardwareAcceleration } from "./startup";
 import { STATIC_DIR } from "shared/paths";
 import { debounce } from "shared/utils/debounce";
 
@@ -36,6 +35,7 @@ import { AppEvents } from "./events";
 import { getPlatformSpoofInfo } from "./gnuSpoofing";
 import { mainWin } from "./mainWindow";
 import { Settings, State } from "./settings";
+import { enableHardwareAcceleration } from "./startup";
 import { handle, handleSync } from "./utils/ipcWrappers";
 import { PopoutWindows } from "./utils/popout";
 import { isDeckGameMode, showGamePage } from "./utils/steamOS";

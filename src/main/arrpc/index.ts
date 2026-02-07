@@ -669,7 +669,9 @@ export async function initArRPC() {
             }
 
             if (signal === "SIGILL") {
-                console.error("[arRPC] SIGILL (Illegal Instruction) - Binary may be compiled for a different CPU architecture");
+                console.error(
+                    "[arRPC] SIGILL (Illegal Instruction) - Binary may be compiled for a different CPU architecture"
+                );
                 console.error(`[arRPC] arch: ${process.arch}, platform: ${process.platform}, binary: ${binaryPath}`);
                 lastError = "SIGILL: Binary incompatible with CPU architecture";
             } else if (signal === "SIGSEGV") {
