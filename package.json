@@ -219,7 +219,6 @@
         "@vencord/venmic",
         "electron",
         "electron-winstaller",
-        "esbuild",
-        "libvesktop"
+        "esbuild"
     ]
 }
