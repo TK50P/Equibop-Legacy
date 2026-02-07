@@ -274,8 +274,11 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                             break;
                         case 3: // repair equicord
                             downloadVencordAsar().then(() => {
-                                app.relaunch();
-                                app.quit();
+                                setTimeout(() => {
+                                    destroyTray();
+                                    app.relaunch();
+                                    app.quit();
+                                }, 0);
                             });
                             break;
                         case 4: // reset Equibop
@@ -288,8 +291,11 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                             restartArRPC();
                             break;
                         case 8: // restart
-                            app.relaunch();
-                            app.quit();
+                            setTimeout(() => {
+                                destroyTray();
+                                app.relaunch();
+                                app.quit();
+                            }, 0);
                             break;
                         case 9: // quit
                             setIsQuitting(true);
@@ -332,6 +338,7 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
             label: "Repair Equicord",
             async click() {
                 await downloadVencordAsar();
+                destroyTray();
                 app.relaunch();
                 app.quit();
             }
@@ -359,6 +366,7 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
         {
             label: "Restart",
             click() {
+                destroyTray();
                 app.relaunch();
                 app.quit();
             }

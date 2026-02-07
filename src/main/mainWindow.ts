@@ -92,6 +92,7 @@ function initMenuBar(win: BrowserWindow) {
             label: "Force Update Equicord",
             async click() {
                 await downloadVencordAsar();
+                destroyTray();
                 app.relaunch();
                 app.quit();
             },
@@ -108,6 +109,7 @@ function initMenuBar(win: BrowserWindow) {
             label: "Relaunch",
             accelerator: "CmdOrCtrl+Shift+R",
             click() {
+                destroyTray();
                 app.relaunch();
                 app.quit();
             }
