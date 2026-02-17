@@ -30,10 +30,6 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 - Custom Arguments from [this PR](https://github.com/Equicord/Equibop/pull/46)
 - arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun
 
-**Linux Note**:
-
-- You can use the `--toggle-mic` & `--toggle-deafen` flags to toggle your microphone and deafen status from the terminal. These can be bound to keyboard shortcuts at the system level.
-
 **Not fully Supported**:
 - Global Keybinds
 
