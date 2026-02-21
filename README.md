@@ -102,19 +102,19 @@ You’ll need the following this files:
 - [Modified Electron](https://github.com/e3kskoy7wqk/Electron-for-windows-7) (Thanks to [@e3kskoy7wqk](https://github.com/e3kskoy7wqk))
 - [package.json](https://raw.githubusercontent.com/TK50P/Equibop-Legacy/refs/heads/main/local_electron/package.json) (Use `curl` or `wget` to download)
 
-Place the unpacked `dist-(x86).zip` and `package.json` in `local_electron`, rename to `electron-v40.0.2-win32-x64` for 64-Bit, and `electron-v40.0.2-win32-ia32` for 32-Bit.
+Place the unpacked `dist-(x86).zip` and `package.json` in `local_electron`, rename to `electron-v40.2.0-win32-x64` for 64-Bit, and `electron-v40.2.0-win32-ia32` for 32-Bit.
 
 Inside this folder, you **must** include the files:  
-- `electron-v40.0.2-win32-x64` (for 64-Bit)
-- `electron-v40.0.2-win32-ia32` (for 32-Bit)
+- `electron-v40.2.0-win32-x64` (for 64-Bit)
+- `electron-v40.2.0-win32-ia32` (for 32-Bit)
 
-Now open `package.json`. Replace `bun run build && electron .` with `bun run build && local_electron/electron-v40.0.2-win32-x64/electron .`. <br>
-In `"devDependencies"` section, replace `"electron"`'s version (e.g. `"^40.0.2"` with `"file:./local_electron"`). 
+Now open `package.json`. Replace `bun run build && electron .` with `bun run build && local_electron/electron-v40.2.0-win32-x64/electron .`. <br>
+In `"devDependencies"` section, replace `"electron"`'s version (e.g. `"^40.2.0"` with `"file:./local_electron"`). 
 
 Now, go to `"build"` section and add this line.
 ```js
-"electronDist": "./local_electron/electron-v40.0.2-win32-x64",
-"electronVersion": "40.0.2",
+"electronDist": "./local_electron/electron-v40.2.0-win32-x64",
+"electronVersion": "40.2.0",
 ```
 > [!NOTE]
 > You must change `x64` to `ia32` if you are targetting to 32-Bit. (Including `package.json` *inside of `local_electron`).*
@@ -141,8 +141,8 @@ Place like this.
         "appId": "org.equicord.equibop",
         "productName": "Equibop",
         "executableName": "equibop",
-        "electronDist": "./local_electron/electron-v40.0.2-win32-x64",
-        "electronVersion": "40.0.2",
+        "electronDist": "./local_electron/electron-v40.2.0-win32-x64",
+        "electronVersion": "40.2.0",
         "files": [
             "!*",
             "!node_modules",
