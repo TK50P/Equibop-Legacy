@@ -26,7 +26,6 @@ You can join our [discord server](https://equicord.org/discord) for commits, cha
 **Extra included changes**
 
 - Tray Customization with voice detection and notification badges
-- Command-line flags to toggle microphone and deafen status (Linux)
 - Custom Arguments from [this PR](https://github.com/Equicord/Equibop/pull/46)
 - arRPC-bun with debug logging support https://github.com/Creationsss/arrpc-bun
 
