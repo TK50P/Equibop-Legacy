@@ -16,9 +16,9 @@ import {
     app,
     BrowserWindow,
     clipboard,
+    ClipboardItem,
     dialog,
     type IpcMainInvokeEvent,
-    nativeImage,
     type RelaunchOptions,
     session,
     shell
@@ -176,10 +176,14 @@ handle(IpcEvents.FLASH_FRAME, (_, flag: boolean) => {
 });
 
 handle(IpcEvents.CLIPBOARD_COPY_IMAGE, async (_, buf: ArrayBuffer, src: string) => {
-    clipboard.write({
-        html: `<img src="${src.replaceAll('"', '\\"')}">`,
-        image: nativeImage.createFromBuffer(Buffer.from(buf))
-    });
+    src = src.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+    clipboard.write([
+        new ClipboardItem({
+            "text/html": `<img src="${src}" />`,
+            "image/png": new Blob([buf], { type: "image/png" })
+        })
+    ]);
 });
 
 function openDebugPage(page: string) {

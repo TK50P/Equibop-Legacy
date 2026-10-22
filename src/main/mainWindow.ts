@@ -466,8 +466,7 @@ function createMainWindow() {
     initDevtoolsListeners(win);
     initStaticTitle(win);
 
-    addSplashLog();
-
+    win.webContents.session.setUserAgent(BrowserUserAgent);
     win.webContents.setUserAgent(BrowserUserAgent);
     addSplashLog();
     win.webContents.setWebRTCIPHandlingPolicy("default_public_and_private_interfaces");
