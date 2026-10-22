@@ -90,7 +90,6 @@
         },
         "beforePack": "scripts/build/beforePack.mjs",
         "afterPack": "scripts/build/afterPack.mjs",
-        "afterSign": "scripts/build/afterSign.mjs",
         "toolsets": {
             "appimage": "1.0.3"
         },
@@ -180,7 +179,6 @@
             ]
         },
         "nsis": {
-            "artifactName": "${productName}-Setup-${version}.${ext}",
             "include": "build/installer.nsh",
             "oneClick": false
         },
