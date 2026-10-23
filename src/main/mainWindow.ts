@@ -408,11 +408,13 @@ function buildBrowserWindowOptions(): BrowserWindowConstructorOptions {
     }
 
     if (process.platform === "darwin") {
-        options.titleBarStyle = "hidden";
-        options.trafficLightPosition = { x: 10, y: 10 };
+        if (!nativeTitleBar) {
+            options.titleBarStyle = "hidden";
+            options.trafficLightPosition = { x: 10, y: 10 };
+        }
 
         if (transparent) {
-            options.titleBarStyle = "hiddenInset";
+            if (!nativeTitleBar) options.titleBarStyle = "hiddenInset";
             options.vibrancy = macosVibrancyStyle || "sidebar";
             options.visualEffectState = "active";
             options.backgroundColor = "#00000000";
@@ -434,7 +436,6 @@ function createMainWindow() {
 
     addSplashLog();
 
-    if (process.platform === "darwin" && !Settings.store.nativeTitleBar) win.setWindowButtonVisibility(false);
     if (process.platform !== "win32" && CommandLine.values["windows-spoof"]) {
         spoofGnu(win);
     }
