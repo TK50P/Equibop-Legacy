@@ -5,11 +5,36 @@
  */
 
 import { execSync } from "child_process";
-import { BuildContext, BuildOptions, context } from "esbuild";
-import { copyFile } from "fs/promises";
+import { BuildContext, BuildOptions, context, Plugin } from "esbuild";
+import { copyFile, readFile } from "fs/promises";
 
 import vencordDep from "./vencordDep.mjs";
 import { includeDirPlugin } from "./includeDirPlugin.mts";
+
+const arrpcPatchPlugin: Plugin = {
+    name: "arrpc-patch",
+    setup(build) {
+        build.onLoad({ filter: /arrpc[\\/]src[\\/]process[\\/]index\.js$/ }, async args => {
+            let contents = await readFile(args.path, "utf-8");
+            contents = contents.replace(
+                /const __dirname = dirname\(fileURLToPath\(import\.meta\.url\)\);\s*const DetectableDB = JSON\.parse\(fs\.readFileSync\(join\(__dirname, ['"]detectable\.json['"]\), ['"]utf8['"]\)\);/,
+                `const DetectableDB = require('./detectable.json');
+DetectableDB.push({
+    aliases: ["Obs"],
+    executables: [
+        { is_launcher: false, name: "obs", os: "linux" },
+        { is_launcher: false, name: "obs.exe", os: "win32" },
+        { is_launcher: false, name: "obs.app", os: "darwin" }
+    ],
+    hook: true,
+    id: "STREAMERMODE",
+    name: "OBS"
+});`
+            );
+            return { contents, loader: "js" };
+        });
+    }
+};
 
 const isDev = process.argv.includes("--dev");
 
@@ -111,9 +136,10 @@ await Promise.all([
     }),
     createContext({
         ...NodeCommonOpts,
-        entryPoints: ["src/preload/arrpcSettings.ts"],
-        outfile: "dist/js/arrpcSettingsPreload.js",
-        footer: { js: "//# sourceURL=VesktopArRPCSettingsPreload" }
+        entryPoints: ["src/main/arrpc/worker.ts"],
+        outfile: "dist/js/arRpcWorker.js",
+        plugins: [arrpcPatchPlugin],
+        footer: { js: "//# sourceURL=VesktopArRpcWorker" }
     }),
     createContext({
         ...CommonOpts,
@@ -133,24 +159,24 @@ await Promise.all([
 const watch = process.argv.includes("--watch");
 
 if (watch) {
-	await Promise.all(contexts.map((ctx) => ctx.watch()));
+    await Promise.all(contexts.map(ctx => ctx.watch()));
 } else {
-	const results = await Promise.all(
-		contexts.map(async (ctx) => {
-			const result = await ctx.rebuild();
-			await ctx.dispose();
-			return result;
-		}),
-	);
+    const results = await Promise.all(
+        contexts.map(async ctx => {
+            const result = await ctx.rebuild();
+            await ctx.dispose();
+            return result;
+        })
+    );
 
-	for (const result of results) {
-		if (result.metafile) {
-			const outputs = Object.keys(result.metafile.outputs);
-			for (const output of outputs) {
-				const meta = result.metafile.outputs[output];
-				const size = (meta.bytes / 1024).toFixed(2);
-				console.log(`  ${output} ${size} KB`);
-			}
-		}
-	}
+    for (const result of results) {
+        if (result.metafile) {
+            const outputs = Object.keys(result.metafile.outputs);
+            for (const output of outputs) {
+                const meta = result.metafile.outputs[output];
+                const size = (meta.bytes / 1024).toFixed(2);
+                console.log(`  ${output} ${size} KB`);
+            }
+        }
+    }
 }

@@ -9,6 +9,8 @@ declare module "__patches__" {
     export default never;
 }
 
+declare module "arrpc";
+
 declare module "@vencord/venmic" {
     export interface Node {
         [key: string]: string;

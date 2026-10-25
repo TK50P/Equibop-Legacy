@@ -10,7 +10,6 @@ import { STATIC_DIR } from "shared/paths";
 
 import { createAboutWindow } from "./about";
 import { createArgumentsWindow } from "./arguments";
-import { createArRPCWindow } from "./arrpcWindow";
 import { AppEvents } from "./events";
 import { Settings } from "./settings";
 import { resolveAssetPath } from "./userAssets";
@@ -223,7 +222,6 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                     { id: 2, label: "About", enabled: true, visible: true },
                     { id: 11, type: "separator" as const, enabled: true, visible: true },
                     { id: 5, label: "Launch Arguments", enabled: true, visible: true },
-                    { id: 10, label: "Configure Rich Presence", enabled: true, visible: true },
                     { id: 12, type: "separator" as const, enabled: true, visible: true },
                     { id: 3, label: "Repair Equicord", enabled: true, visible: true },
                     { id: 4, label: "Reset Equibop", enabled: true, visible: true },
@@ -278,9 +276,6 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
                         case 5: // launch arguments
                             createArgumentsWindow();
                             break;
-                        case 10: // configure rich presence
-                            createArRPCWindow();
-                            break;
                         case 8: // restart
                             setTimeout(() => {
                                 destroyTray();
@@ -329,10 +324,6 @@ export async function initTray(win: BrowserWindow, setIsQuitting: (val: boolean)
         {
             label: "Launch Arguments",
             click: createArgumentsWindow
-        },
-        {
-            label: "Configure Rich Presence",
-            click: createArRPCWindow
         },
         { type: "separator" },
         {

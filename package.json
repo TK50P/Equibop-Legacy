@@ -13,7 +13,6 @@
         "build": "bun run scripts/build/build.mts",
         "build:dev": "bun run build --dev",
         "buildLibVesktop": "bun install --cwd packages/libvesktop && bun run --cwd packages/libvesktop build",
-        "compileArrpc": "bun run scripts/build/compileArrpc.mts",
         "package": "bun run build && electron-builder",
         "package:dir": "bun run build && electron-builder --dir",
         "lint": "eslint",
@@ -24,18 +23,14 @@
         "test": "bun lint && bun testTypes",
         "testTypes": "tsc --noEmit",
         "watch": "bun run build --watch",
-        "generateMeta": "bun run scripts/utils/generateMeta.mts",
-        "updateArrpcDB": "bun ./node_modules/arrpc-bun/scripts/update_db.ts",
-        "postinstall": "bun updateArrpcDB && bun compileArrpc"
+        "generateMeta": "bun run scripts/utils/generateMeta.mts"
     },
     "dependencies": {
-        "@types/ws": "^8.18.2",
         "@typescript-eslint/eslint-plugin": "^8.72.0",
         "@typescript-eslint/parser": "^8.72.0",
-        "arrpc-bun": "^1.4.0",
+        "arrpc": "github:Vencord/arrpc#1dc801e8ea14d96ce8dccff416417614f058afb8",
         "electron-updater": "^6.8.9",
-        "tsutils": "^3.21.0",
-        "ws": "^8.22.0"
+        "tsutils": "^3.21.0"
     },
     "optionalDependencies": {
         "@vencord/venmic": "^7.2.3"

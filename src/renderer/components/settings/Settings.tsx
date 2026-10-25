@@ -12,7 +12,6 @@ import { ComponentType } from "react";
 import { getValueAndOnChange, Settings, useSettings } from "renderer/settings";
 import { isMac } from "renderer/utils";
 
-import { ArRPCSettingsButton } from "./ArRPCSettings";
 import { AutoStartToggle } from "./AutoStartToggle";
 import { DeveloperOptionsButton } from "./DeveloperOptions";
 import { DiscordBranchPicker } from "./DiscordBranchPicker";
@@ -139,12 +138,16 @@ const SettingsOptions: Record<string, Array<BooleanSetting | SettingsComponent>>
             description: "Flashes the app in your taskbar when you have new notifications."
         }
     ],
-    "Rich Presence": [ArRPCSettingsButton],
     Miscellaneous: [
         {
             key: "middleClickAutoscroll",
             title: "Middle Click Autoscroll",
             description: "Enables middle-click scrolling (Requires a full restart)"
+        },
+        {
+            key: "arRPC",
+            title: "Rich Presence",
+            description: "Enables Rich Presence via arRPC"
         },
         {
             key: "openLinksWithElectron",

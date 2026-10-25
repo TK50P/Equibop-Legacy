@@ -91,8 +91,7 @@ export const VesktopNative = {
         },
         offActivity(cb: ArRPCActivityCallback) {
             arrpcActivityCallbacks.delete(cb);
-        },
-        openSettings: () => invoke<void>(IpcEvents.ARRPC_OPEN_SETTINGS)
+        }
     },
     win: {
         focus: () => invoke<void>(IpcEvents.FOCUS),
