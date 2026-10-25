@@ -1,0 +1,9 @@
+{
+    "name": "electron",
+    "version": "40.2.0",
+    "description": "Modified Electron for Windows NT 6.x",
+    "main": "./electron-v40.2.0-win32-x64/electron.exe",
+    "bin": {
+        "electron": "./electron-v40.2.0-win32-x64/electron.exe"
+    }
+}
